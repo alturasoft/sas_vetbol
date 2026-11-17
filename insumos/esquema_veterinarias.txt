@@ -1,0 +1,4055 @@
+{
+    "views": [
+        {
+            "view_name": "vw_timeline_clinico",
+            "definition": " SELECT hc.id_historia_clinica,\n    hc.id_veterinaria,\n    hc.id_mascota,\n    hc.id_cliente,\n    hc.fecha_consulta,\n    hc.tipo_consulta,\n    hc.motivo_consulta,\n    hc.estado,\n    m.nombre AS mascota,\n    ((c.nombres || ' '::text) || c.apellidos) AS propietario,\n    'CONSULTA'::text AS origen_registro,\n    hc.id_historia_clinica AS id_origen\n   FROM ((veterinarias.historias_clinicas hc\n     JOIN veterinarias.mascotas m ON ((hc.id_mascota = m.id_mascota)))\n     JOIN veterinarias.clientes c ON ((hc.id_cliente = c.id_cliente)))\nUNION ALL\n SELECT NULL::bigint AS id_historia_clinica,\n    h.id_veterinaria,\n    h.id_mascota,\n    m.id_cliente,\n    COALESCE(h.fecha_alta, h.fecha_ingreso) AS fecha_consulta,\n    'HOSPITALIZACION'::text AS tipo_consulta,\n    (((('Ingreso por: '::text || COALESCE(h.motivo_ingreso, ''::text)) || chr(10)) || 'Alta/Observaciones: '::text) || COALESCE(h.observaciones, ''::text)) AS motivo_consulta,\n    h.estado,\n    m.nombre AS mascota,\n    ((c.nombres || ' '::text) || c.apellidos) AS propietario,\n    'HOSPITALIZACION'::text AS origen_registro,\n    h.id_hospitalizacion AS id_origen\n   FROM ((veterinarias.hospitalizaciones h\n     JOIN veterinarias.mascotas m ON ((h.id_mascota = m.id_mascota)))\n     JOIN veterinarias.clientes c ON ((m.id_cliente = c.id_cliente)))\n  WHERE ((h.estado)::text = 'ALTA'::text)\nUNION ALL\n SELECT NULL::bigint AS id_historia_clinica,\n    ci.id_veterinaria,\n    ci.id_mascota,\n    m.id_cliente,\n    ci.fecha_cirugia AS fecha_consulta,\n    'CIRUGIA'::text AS tipo_consulta,\n    ci.procedimiento AS motivo_consulta,\n    ci.estado,\n    m.nombre AS mascota,\n    ((c.nombres || ' '::text) || c.apellidos) AS propietario,\n    'CIRUGIA'::text AS origen_registro,\n    ci.id_cirugia AS id_origen\n   FROM ((veterinarias.cirugias ci\n     JOIN veterinarias.mascotas m ON ((ci.id_mascota = m.id_mascota)))\n     JOIN veterinarias.clientes c ON ((m.id_cliente = c.id_cliente)))\n  WHERE ((ci.estado)::text = 'FINALIZADA'::text);"
+        },
+        {
+            "view_name": "vw_agenda_general",
+            "definition": " SELECT c.id_cita,\n    c.fecha_inicio,\n    c.fecha_fin,\n    c.estado,\n    m.nombre AS mascota,\n    ((cl.nombres || ' '::text) || cl.apellidos) AS propietario,\n    ((p.nombres || ' '::text) || p.apellidos) AS veterinario,\n    s.nombre AS servicio\n   FROM ((((veterinarias.citas c\n     JOIN veterinarias.mascotas m ON ((c.id_mascota = m.id_mascota)))\n     JOIN veterinarias.clientes cl ON ((c.id_cliente = cl.id_cliente)))\n     JOIN veterinarias.personal p ON ((c.id_persona = p.id_persona)))\n     JOIN veterinarias.servicios s ON ((c.id_servicio = s.id_servicio)));"
+        },
+        {
+            "view_name": "v_notificaciones_trace",
+            "definition": " SELECT id,\n    evento,\n    id_publicacion,\n    id_veterinaria,\n    topic,\n    titulo,\n    tipo,\n    detalle,\n    created_at,\n    to_char((created_at AT TIME ZONE 'America/La_Paz'::text), 'DD/MM/YYYY HH24:MI:SS'::text) AS created_local\n   FROM veterinarias.notificaciones_trace t\n  ORDER BY created_at DESC\n LIMIT 50;"
+        }
+    ],
+    "schema": "veterinarias",
+    "tables": [
+        {
+            "columns": [
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_aviso",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_veterinaria",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_cliente",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "titulo",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "cuerpo",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "bool",
+                    "data_type": "boolean",
+                    "column_name": "leido",
+                    "is_nullable": "NO",
+                    "column_default": "false"
+                },
+                {
+                    "udt_name": "timestamptz",
+                    "data_type": "timestamp with time zone",
+                    "column_name": "created_at",
+                    "is_nullable": "YES",
+                    "column_default": "now()"
+                }
+            ],
+            "indexes": [
+                {
+                    "index_name": "avisos_cliente_pkey",
+                    "index_definition": "CREATE UNIQUE INDEX avisos_cliente_pkey ON veterinarias.avisos_cliente USING btree (id_aviso)"
+                }
+            ],
+            "triggers": [
+                {
+                    "trigger_name": "trg_notify_nuevo_aviso_cliente",
+                    "action_timing": "AFTER",
+                    "action_statement": "EXECUTE FUNCTION veterinarias.fn_notify_nuevo_aviso_cliente()",
+                    "event_manipulation": "INSERT"
+                }
+            ],
+            "table_name": "avisos_cliente",
+            "rls_enabled": true,
+            "foreign_keys": [
+                {
+                    "column_name": "id_veterinaria",
+                    "foreign_table": "veterinarias",
+                    "foreign_column": "id_veterinaria",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "fk_aviso_veterinaria"
+                },
+                {
+                    "column_name": "id_cliente",
+                    "foreign_table": "clientes",
+                    "foreign_column": "id_cliente",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "fk_aviso_cliente"
+                }
+            ],
+            "primary_keys": [
+                "id_aviso"
+            ],
+            "rls_policies": [
+                {
+                    "cmd": "SELECT",
+                    "qual": "true",
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Cliente avisos_cliente SELECT"
+                },
+                {
+                    "cmd": "ALL",
+                    "qual": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "policy_name": "Staff avisos_cliente ALL"
+                },
+                {
+                    "cmd": "UPDATE",
+                    "qual": "true",
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "true",
+                    "policy_name": "Cliente avisos_cliente UPDATE"
+                }
+            ]
+        },
+        {
+            "columns": [
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_bloqueo",
+                    "is_nullable": "NO",
+                    "column_default": "nextval('veterinarias.bloqueos_agenda_id_bloqueo_seq'::regclass)"
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_veterinaria",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_persona",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "timestamp",
+                    "data_type": "timestamp without time zone",
+                    "column_name": "fecha_inicio",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "timestamp",
+                    "data_type": "timestamp without time zone",
+                    "column_name": "fecha_fin",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "tipo_bloqueo",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "motivo",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "timestamp",
+                    "data_type": "timestamp without time zone",
+                    "column_name": "created_at",
+                    "is_nullable": "YES",
+                    "column_default": "now()"
+                }
+            ],
+            "indexes": [
+                {
+                    "index_name": "idx_bloqueos_agenda_vet_persona_fecha",
+                    "index_definition": "CREATE INDEX idx_bloqueos_agenda_vet_persona_fecha ON veterinarias.bloqueos_agenda USING btree (id_veterinaria, id_persona, fecha_inicio, fecha_fin)"
+                },
+                {
+                    "index_name": "idx_bloqueos_personal",
+                    "index_definition": "CREATE INDEX idx_bloqueos_personal ON veterinarias.bloqueos_agenda USING btree (id_persona)"
+                },
+                {
+                    "index_name": "bloqueos_agenda_pkey",
+                    "index_definition": "CREATE UNIQUE INDEX bloqueos_agenda_pkey ON veterinarias.bloqueos_agenda USING btree (id_bloqueo)"
+                }
+            ],
+            "triggers": [
+            ],
+            "table_name": "bloqueos_agenda",
+            "rls_enabled": true,
+            "foreign_keys": [
+                {
+                    "column_name": "id_persona",
+                    "foreign_table": "personal",
+                    "foreign_column": "id_persona",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "fk_bloqueo_personal"
+                },
+                {
+                    "column_name": "id_veterinaria",
+                    "foreign_table": "veterinarias",
+                    "foreign_column": "id_veterinaria",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "fk_bloqueo_veterinaria"
+                }
+            ],
+            "primary_keys": [
+                "id_bloqueo"
+            ],
+            "rls_policies": [
+                {
+                    "cmd": "SELECT",
+                    "qual": "true",
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Cliente bloqueos_agenda SELECT"
+                },
+                {
+                    "cmd": "ALL",
+                    "qual": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "policy_name": "Staff bloqueos_agenda ALL"
+                }
+            ]
+        },
+        {
+            "columns": [
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_cirugia",
+                    "is_nullable": "NO",
+                    "column_default": "nextval('veterinarias.cirugias_id_cirugia_seq'::regclass)"
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_historia_clinica",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "tipo_cirugia",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "procedimiento",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "anestesia",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "complicaciones",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "resultado",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "timestamp",
+                    "data_type": "timestamp without time zone",
+                    "column_name": "fecha_cirugia",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "observaciones",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "timestamp",
+                    "data_type": "timestamp without time zone",
+                    "column_name": "created_at",
+                    "is_nullable": "YES",
+                    "column_default": "now()"
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_veterinaria",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_mascota",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "cirujano",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "estado",
+                    "is_nullable": "YES",
+                    "column_default": "'PROGRAMADA'::character varying"
+                },
+                {
+                    "udt_name": "timestamptz",
+                    "data_type": "timestamp with time zone",
+                    "column_name": "updated_at",
+                    "is_nullable": "YES",
+                    "column_default": "now()"
+                }
+            ],
+            "indexes": [
+                {
+                    "index_name": "cirugias_pkey",
+                    "index_definition": "CREATE UNIQUE INDEX cirugias_pkey ON veterinarias.cirugias USING btree (id_cirugia)"
+                },
+                {
+                    "index_name": "idx_cirugia_historia",
+                    "index_definition": "CREATE INDEX idx_cirugia_historia ON veterinarias.cirugias USING btree (id_historia_clinica)"
+                }
+            ],
+            "triggers": [
+            ],
+            "table_name": "cirugias",
+            "rls_enabled": true,
+            "foreign_keys": [
+                {
+                    "column_name": "id_mascota",
+                    "foreign_table": "mascotas",
+                    "foreign_column": "id_mascota",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "cirugias_id_mascota_fkey"
+                },
+                {
+                    "column_name": "id_veterinaria",
+                    "foreign_table": "veterinarias",
+                    "foreign_column": "id_veterinaria",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "cirugias_id_veterinaria_fkey"
+                },
+                {
+                    "column_name": "id_historia_clinica",
+                    "foreign_table": "historias_clinicas",
+                    "foreign_column": "id_historia_clinica",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "fk_cirugia_historia"
+                }
+            ],
+            "primary_keys": [
+                "id_cirugia"
+            ],
+            "rls_policies": [
+                {
+                    "cmd": "ALL",
+                    "qual": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "policy_name": "Staff cirugias ALL"
+                },
+                {
+                    "cmd": "SELECT",
+                    "qual": "true",
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Cliente cirugias SELECT"
+                }
+            ]
+        },
+        {
+            "columns": [
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_cita",
+                    "is_nullable": "NO",
+                    "column_default": "nextval('veterinarias.citas_id_cita_seq'::regclass)"
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_veterinaria",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_cliente",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_mascota",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_persona",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_servicio",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "timestamp",
+                    "data_type": "timestamp without time zone",
+                    "column_name": "fecha_inicio",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "timestamp",
+                    "data_type": "timestamp without time zone",
+                    "column_name": "fecha_fin",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "estado",
+                    "is_nullable": "NO",
+                    "column_default": "'PENDIENTE'::character varying"
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "origen",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "motivo",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "observaciones",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "bool",
+                    "data_type": "boolean",
+                    "column_name": "confirmado_cliente",
+                    "is_nullable": "YES",
+                    "column_default": "false"
+                },
+                {
+                    "udt_name": "bool",
+                    "data_type": "boolean",
+                    "column_name": "recordatorio_enviado",
+                    "is_nullable": "YES",
+                    "column_default": "false"
+                },
+                {
+                    "udt_name": "timestamp",
+                    "data_type": "timestamp without time zone",
+                    "column_name": "created_at",
+                    "is_nullable": "YES",
+                    "column_default": "now()"
+                },
+                {
+                    "udt_name": "timestamp",
+                    "data_type": "timestamp without time zone",
+                    "column_name": "updated_at",
+                    "is_nullable": "YES",
+                    "column_default": null
+                }
+            ],
+            "indexes": [
+                {
+                    "index_name": "idx_citas_personal",
+                    "index_definition": "CREATE INDEX idx_citas_personal ON veterinarias.citas USING btree (id_persona)"
+                },
+                {
+                    "index_name": "idx_citas_fecha_inicio",
+                    "index_definition": "CREATE INDEX idx_citas_fecha_inicio ON veterinarias.citas USING btree (fecha_inicio)"
+                },
+                {
+                    "index_name": "citas_pkey",
+                    "index_definition": "CREATE UNIQUE INDEX citas_pkey ON veterinarias.citas USING btree (id_cita)"
+                },
+                {
+                    "index_name": "idx_citas_fecha_fin",
+                    "index_definition": "CREATE INDEX idx_citas_fecha_fin ON veterinarias.citas USING btree (fecha_fin)"
+                },
+                {
+                    "index_name": "idx_citas_mascota",
+                    "index_definition": "CREATE INDEX idx_citas_mascota ON veterinarias.citas USING btree (id_mascota)"
+                },
+                {
+                    "index_name": "idx_citas_cliente",
+                    "index_definition": "CREATE INDEX idx_citas_cliente ON veterinarias.citas USING btree (id_cliente)"
+                },
+                {
+                    "index_name": "idx_citas_estado",
+                    "index_definition": "CREATE INDEX idx_citas_estado ON veterinarias.citas USING btree (estado)"
+                },
+                {
+                    "index_name": "idx_citas_vet_persona_fecha_estado",
+                    "index_definition": "CREATE INDEX idx_citas_vet_persona_fecha_estado ON veterinarias.citas USING btree (id_veterinaria, id_persona, fecha_inicio, fecha_fin, estado)"
+                }
+            ],
+            "triggers": [
+                {
+                    "trigger_name": "trg_validar_solapamiento",
+                    "action_timing": "BEFORE",
+                    "action_statement": "EXECUTE FUNCTION veterinarias.validar_solapamiento_citas()",
+                    "event_manipulation": "INSERT"
+                },
+                {
+                    "trigger_name": "trg_validar_solapamiento",
+                    "action_timing": "BEFORE",
+                    "action_statement": "EXECUTE FUNCTION veterinarias.validar_solapamiento_citas()",
+                    "event_manipulation": "UPDATE"
+                }
+            ],
+            "table_name": "citas",
+            "rls_enabled": true,
+            "foreign_keys": [
+                {
+                    "column_name": "id_veterinaria",
+                    "foreign_table": "veterinarias",
+                    "foreign_column": "id_veterinaria",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "fk_cita_veterinaria"
+                },
+                {
+                    "column_name": "id_mascota",
+                    "foreign_table": "mascotas",
+                    "foreign_column": "id_mascota",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "fk_cita_mascota"
+                },
+                {
+                    "column_name": "id_cliente",
+                    "foreign_table": "clientes",
+                    "foreign_column": "id_cliente",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "fk_cita_cliente"
+                },
+                {
+                    "column_name": "id_servicio",
+                    "foreign_table": "servicios",
+                    "foreign_column": "id_servicio",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "fk_cita_servicio"
+                },
+                {
+                    "column_name": "id_persona",
+                    "foreign_table": "personal",
+                    "foreign_column": "id_persona",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "fk_cita_personal"
+                }
+            ],
+            "primary_keys": [
+                "id_cita"
+            ],
+            "rls_policies": [
+                {
+                    "cmd": "INSERT",
+                    "qual": null,
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "true",
+                    "policy_name": "Cliente citas INSERT"
+                },
+                {
+                    "cmd": "SELECT",
+                    "qual": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Staff citas SELECT"
+                },
+                {
+                    "cmd": "DELETE",
+                    "qual": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Staff citas DELETE"
+                },
+                {
+                    "cmd": "UPDATE",
+                    "qual": "true",
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "true",
+                    "policy_name": "Cliente citas UPDATE"
+                },
+                {
+                    "cmd": "SELECT",
+                    "qual": "true",
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Cliente citas SELECT"
+                },
+                {
+                    "cmd": "INSERT",
+                    "qual": null,
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "policy_name": "Staff citas INSERT"
+                },
+                {
+                    "cmd": "UPDATE",
+                    "qual": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "policy_name": "Staff citas UPDATE"
+                }
+            ]
+        },
+        {
+            "columns": [
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_historial",
+                    "is_nullable": "NO",
+                    "column_default": "nextval('veterinarias.citas_historial_id_historial_seq'::regclass)"
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_cita",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "estado_anterior",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "estado_nuevo",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "observacion",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "timestamp",
+                    "data_type": "timestamp without time zone",
+                    "column_name": "changed_at",
+                    "is_nullable": "YES",
+                    "column_default": "now()"
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "changed_by",
+                    "is_nullable": "YES",
+                    "column_default": null
+                }
+            ],
+            "indexes": [
+                {
+                    "index_name": "citas_historial_pkey",
+                    "index_definition": "CREATE UNIQUE INDEX citas_historial_pkey ON veterinarias.citas_historial USING btree (id_historial)"
+                }
+            ],
+            "triggers": [
+            ],
+            "table_name": "citas_historial",
+            "rls_enabled": true,
+            "foreign_keys": [
+                {
+                    "column_name": "id_cita",
+                    "foreign_table": "citas",
+                    "foreign_column": "id_cita",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "fk_historial_cita"
+                }
+            ],
+            "primary_keys": [
+                "id_historial"
+            ],
+            "rls_policies": [
+                {
+                    "cmd": "ALL",
+                    "qual": "(id_cita IN ( SELECT citas.id_cita\n   FROM veterinarias.citas\n  WHERE (citas.id_veterinaria = veterinarias.get_my_vet_id())))",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "(id_cita IN ( SELECT citas.id_cita\n   FROM veterinarias.citas\n  WHERE (citas.id_veterinaria = veterinarias.get_my_vet_id())))",
+                    "policy_name": "Staff citas_historial ALL"
+                }
+            ]
+        },
+        {
+            "columns": [
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_notificacion",
+                    "is_nullable": "NO",
+                    "column_default": "nextval('veterinarias.citas_notificaciones_id_notificacion_seq'::regclass)"
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_cita",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "tipo",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "bool",
+                    "data_type": "boolean",
+                    "column_name": "enviado",
+                    "is_nullable": "YES",
+                    "column_default": "false"
+                },
+                {
+                    "udt_name": "timestamp",
+                    "data_type": "timestamp without time zone",
+                    "column_name": "fecha_envio",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "mensaje",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "timestamp",
+                    "data_type": "timestamp without time zone",
+                    "column_name": "created_at",
+                    "is_nullable": "YES",
+                    "column_default": "now()"
+                }
+            ],
+            "indexes": [
+                {
+                    "index_name": "citas_notificaciones_pkey",
+                    "index_definition": "CREATE UNIQUE INDEX citas_notificaciones_pkey ON veterinarias.citas_notificaciones USING btree (id_notificacion)"
+                }
+            ],
+            "triggers": [
+            ],
+            "table_name": "citas_notificaciones",
+            "rls_enabled": true,
+            "foreign_keys": [
+                {
+                    "column_name": "id_cita",
+                    "foreign_table": "citas",
+                    "foreign_column": "id_cita",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "fk_notificacion_cita"
+                }
+            ],
+            "primary_keys": [
+                "id_notificacion"
+            ],
+            "rls_policies": [
+                {
+                    "cmd": "ALL",
+                    "qual": "(id_cita IN ( SELECT citas.id_cita\n   FROM veterinarias.citas\n  WHERE (citas.id_veterinaria = veterinarias.get_my_vet_id())))",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "(id_cita IN ( SELECT citas.id_cita\n   FROM veterinarias.citas\n  WHERE (citas.id_veterinaria = veterinarias.get_my_vet_id())))",
+                    "policy_name": "Staff citas_notificaciones ALL"
+                }
+            ]
+        },
+        {
+            "columns": [
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_cliente",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_veterinaria",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "nombres",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "apellidos",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "numero_ci",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "telefono",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "email",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "foto_url",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "timestamptz",
+                    "data_type": "timestamp with time zone",
+                    "column_name": "fecha_crea",
+                    "is_nullable": "YES",
+                    "column_default": "now()"
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "password",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "fcm_token",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "depto",
+                    "is_nullable": "YES",
+                    "column_default": null
+                }
+            ],
+            "indexes": [
+                {
+                    "index_name": "clientes_pkey",
+                    "index_definition": "CREATE UNIQUE INDEX clientes_pkey ON veterinarias.clientes USING btree (id_cliente)"
+                },
+                {
+                    "index_name": "clientes_email_id_veterinaria_key",
+                    "index_definition": "CREATE UNIQUE INDEX clientes_email_id_veterinaria_key ON veterinarias.clientes USING btree (id_veterinaria, email)"
+                },
+                {
+                    "index_name": "idx_clientes_fcm_token",
+                    "index_definition": "CREATE INDEX idx_clientes_fcm_token ON veterinarias.clientes USING btree (fcm_token) WHERE (fcm_token IS NOT NULL)"
+                }
+            ],
+            "triggers": [
+            ],
+            "table_name": "clientes",
+            "rls_enabled": true,
+            "foreign_keys": [
+                {
+                    "column_name": "depto",
+                    "foreign_table": "departamentos",
+                    "foreign_column": "id_depto",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "clientes_depto_fkey"
+                },
+                {
+                    "column_name": "id_veterinaria",
+                    "foreign_table": "veterinarias",
+                    "foreign_column": "id_veterinaria",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "clientes_id_veterinaria_fkey"
+                }
+            ],
+            "primary_keys": [
+                "id_cliente"
+            ],
+            "rls_policies": [
+                {
+                    "cmd": "INSERT",
+                    "qual": null,
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "policy_name": "Staff clientes INSERT"
+                },
+                {
+                    "cmd": "DELETE",
+                    "qual": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Staff clientes DELETE"
+                },
+                {
+                    "cmd": "SELECT",
+                    "qual": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Staff clientes SELECT"
+                },
+                {
+                    "cmd": "UPDATE",
+                    "qual": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "policy_name": "Staff clientes UPDATE"
+                },
+                {
+                    "cmd": "UPDATE",
+                    "qual": "true",
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "true",
+                    "policy_name": "Cliente clientes UPDATE"
+                },
+                {
+                    "cmd": "SELECT",
+                    "qual": "true",
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Cliente clientes SELECT"
+                },
+                {
+                    "cmd": "INSERT",
+                    "qual": null,
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "true",
+                    "policy_name": "Cliente clientes INSERT"
+                }
+            ]
+        },
+        {
+            "columns": [
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_depto",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "departamento",
+                    "is_nullable": "NO",
+                    "column_default": null
+                }
+            ],
+            "indexes": [
+                {
+                    "index_name": "departamentos_pkey",
+                    "index_definition": "CREATE UNIQUE INDEX departamentos_pkey ON veterinarias.departamentos USING btree (id_depto)"
+                }
+            ],
+            "triggers": [
+            ],
+            "table_name": "departamentos",
+            "rls_enabled": true,
+            "foreign_keys": [
+            ],
+            "primary_keys": [
+                "id_depto"
+            ],
+            "rls_policies": [
+                {
+                    "cmd": "SELECT",
+                    "qual": "true",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Staff departamentos SELECT"
+                },
+                {
+                    "cmd": "SELECT",
+                    "qual": "true",
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Cliente departamentos SELECT"
+                }
+            ]
+        },
+        {
+            "columns": [
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_archivo",
+                    "is_nullable": "NO",
+                    "column_default": "nextval('veterinarias.historia_archivos_id_archivo_seq'::regclass)"
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_historia_clinica",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "tipo_archivo",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "nombre_archivo",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "url_archivo",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "extension",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "int4",
+                    "data_type": "integer",
+                    "column_name": "tamano_kb",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "observaciones",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "timestamp",
+                    "data_type": "timestamp without time zone",
+                    "column_name": "created_at",
+                    "is_nullable": "YES",
+                    "column_default": "now()"
+                }
+            ],
+            "indexes": [
+                {
+                    "index_name": "idx_archivo_historia",
+                    "index_definition": "CREATE INDEX idx_archivo_historia ON veterinarias.historia_archivos USING btree (id_historia_clinica)"
+                },
+                {
+                    "index_name": "historia_archivos_pkey",
+                    "index_definition": "CREATE UNIQUE INDEX historia_archivos_pkey ON veterinarias.historia_archivos USING btree (id_archivo)"
+                }
+            ],
+            "triggers": [
+            ],
+            "table_name": "historia_archivos",
+            "rls_enabled": true,
+            "foreign_keys": [
+                {
+                    "column_name": "id_historia_clinica",
+                    "foreign_table": "historias_clinicas",
+                    "foreign_column": "id_historia_clinica",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "fk_archivo_historia"
+                }
+            ],
+            "primary_keys": [
+                "id_archivo"
+            ],
+            "rls_policies": [
+                {
+                    "cmd": "SELECT",
+                    "qual": "true",
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Cliente historia_archivos SELECT"
+                },
+                {
+                    "cmd": "ALL",
+                    "qual": "(id_historia_clinica IN ( SELECT historias_clinicas.id_historia_clinica\n   FROM veterinarias.historias_clinicas\n  WHERE (historias_clinicas.id_veterinaria = veterinarias.get_my_vet_id())))",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "(id_historia_clinica IN ( SELECT historias_clinicas.id_historia_clinica\n   FROM veterinarias.historias_clinicas\n  WHERE (historias_clinicas.id_veterinaria = veterinarias.get_my_vet_id())))",
+                    "policy_name": "Staff historia_archivos ALL"
+                }
+            ]
+        },
+        {
+            "columns": [
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_diagnostico",
+                    "is_nullable": "NO",
+                    "column_default": "nextval('veterinarias.historia_diagnosticos_id_diagnostico_seq'::regclass)"
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_historia_clinica",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "tipo_diagnostico",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "diagnostico",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "codigo_cie_vet",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "gravedad",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "observaciones",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "timestamp",
+                    "data_type": "timestamp without time zone",
+                    "column_name": "created_at",
+                    "is_nullable": "YES",
+                    "column_default": "now()"
+                }
+            ],
+            "indexes": [
+                {
+                    "index_name": "historia_diagnosticos_pkey",
+                    "index_definition": "CREATE UNIQUE INDEX historia_diagnosticos_pkey ON veterinarias.historia_diagnosticos USING btree (id_diagnostico)"
+                },
+                {
+                    "index_name": "idx_diag_historia",
+                    "index_definition": "CREATE INDEX idx_diag_historia ON veterinarias.historia_diagnosticos USING btree (id_historia_clinica)"
+                }
+            ],
+            "triggers": [
+            ],
+            "table_name": "historia_diagnosticos",
+            "rls_enabled": true,
+            "foreign_keys": [
+                {
+                    "column_name": "id_historia_clinica",
+                    "foreign_table": "historias_clinicas",
+                    "foreign_column": "id_historia_clinica",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "fk_diag_historia"
+                }
+            ],
+            "primary_keys": [
+                "id_diagnostico"
+            ],
+            "rls_policies": [
+                {
+                    "cmd": "ALL",
+                    "qual": "(id_historia_clinica IN ( SELECT historias_clinicas.id_historia_clinica\n   FROM veterinarias.historias_clinicas\n  WHERE (historias_clinicas.id_veterinaria = veterinarias.get_my_vet_id())))",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "(id_historia_clinica IN ( SELECT historias_clinicas.id_historia_clinica\n   FROM veterinarias.historias_clinicas\n  WHERE (historias_clinicas.id_veterinaria = veterinarias.get_my_vet_id())))",
+                    "policy_name": "Staff historia_diagnosticos ALL"
+                },
+                {
+                    "cmd": "SELECT",
+                    "qual": "true",
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Cliente historia_diagnosticos SELECT"
+                }
+            ]
+        },
+        {
+            "columns": [
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_evolucion",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_hospitalizacion",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "timestamptz",
+                    "data_type": "timestamp with time zone",
+                    "column_name": "fecha_evolucion",
+                    "is_nullable": "YES",
+                    "column_default": "now()"
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "descripcion",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_personal",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "timestamptz",
+                    "data_type": "timestamp with time zone",
+                    "column_name": "created_at",
+                    "is_nullable": "YES",
+                    "column_default": "now()"
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "nota",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "temperatura",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "peso",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "frecuencia_cardiaca",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "frecuencia_respiratoria",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "tratamiento",
+                    "is_nullable": "YES",
+                    "column_default": null
+                }
+            ],
+            "indexes": [
+                {
+                    "index_name": "historia_evolucion_hospitalizacion_pkey",
+                    "index_definition": "CREATE UNIQUE INDEX historia_evolucion_hospitalizacion_pkey ON veterinarias.historia_evolucion_hospitalizacion USING btree (id_evolucion)"
+                }
+            ],
+            "triggers": [
+            ],
+            "table_name": "historia_evolucion_hospitalizacion",
+            "rls_enabled": true,
+            "foreign_keys": [
+                {
+                    "column_name": "id_hospitalizacion",
+                    "foreign_table": "hospitalizaciones",
+                    "foreign_column": "id_hospitalizacion",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "historia_evolucion_hospitalizacion_id_hospitalizacion_fkey"
+                },
+                {
+                    "column_name": "id_personal",
+                    "foreign_table": "personal",
+                    "foreign_column": "id_persona",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "historia_evolucion_hospitalizacion_id_personal_fkey"
+                }
+            ],
+            "primary_keys": [
+                "id_evolucion"
+            ],
+            "rls_policies": [
+                {
+                    "cmd": "SELECT",
+                    "qual": "true",
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Cliente historia_evolucion_hospitalizacion SELECT"
+                },
+                {
+                    "cmd": "ALL",
+                    "qual": "(id_hospitalizacion IN ( SELECT hospitalizaciones.id_hospitalizacion\n   FROM veterinarias.hospitalizaciones\n  WHERE (hospitalizaciones.id_veterinaria = veterinarias.get_my_vet_id())))",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "(id_hospitalizacion IN ( SELECT hospitalizaciones.id_hospitalizacion\n   FROM veterinarias.hospitalizaciones\n  WHERE (hospitalizaciones.id_veterinaria = veterinarias.get_my_vet_id())))",
+                    "policy_name": "Staff historia_evolucion_hospitalizacion ALL"
+                }
+            ]
+        },
+        {
+            "columns": [
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_examen",
+                    "is_nullable": "NO",
+                    "column_default": "nextval('veterinarias.historia_examenes_id_examen_seq'::regclass)"
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_historia_clinica",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "tipo_examen",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "resultado",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "archivo_resultado",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "timestamp",
+                    "data_type": "timestamp without time zone",
+                    "column_name": "fecha_examen",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "laboratorio",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "observaciones",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "timestamp",
+                    "data_type": "timestamp without time zone",
+                    "column_name": "created_at",
+                    "is_nullable": "YES",
+                    "column_default": "now()"
+                }
+            ],
+            "indexes": [
+                {
+                    "index_name": "historia_examenes_pkey",
+                    "index_definition": "CREATE UNIQUE INDEX historia_examenes_pkey ON veterinarias.historia_examenes USING btree (id_examen)"
+                },
+                {
+                    "index_name": "idx_examen_historia",
+                    "index_definition": "CREATE INDEX idx_examen_historia ON veterinarias.historia_examenes USING btree (id_historia_clinica)"
+                }
+            ],
+            "triggers": [
+            ],
+            "table_name": "historia_examenes",
+            "rls_enabled": true,
+            "foreign_keys": [
+                {
+                    "column_name": "id_historia_clinica",
+                    "foreign_table": "historias_clinicas",
+                    "foreign_column": "id_historia_clinica",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "fk_examen_historia"
+                }
+            ],
+            "primary_keys": [
+                "id_examen"
+            ],
+            "rls_policies": [
+                {
+                    "cmd": "ALL",
+                    "qual": "(id_historia_clinica IN ( SELECT historias_clinicas.id_historia_clinica\n   FROM veterinarias.historias_clinicas\n  WHERE (historias_clinicas.id_veterinaria = veterinarias.get_my_vet_id())))",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "(id_historia_clinica IN ( SELECT historias_clinicas.id_historia_clinica\n   FROM veterinarias.historias_clinicas\n  WHERE (historias_clinicas.id_veterinaria = veterinarias.get_my_vet_id())))",
+                    "policy_name": "Staff historia_examenes ALL"
+                },
+                {
+                    "cmd": "SELECT",
+                    "qual": "true",
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Cliente historia_examenes SELECT"
+                }
+            ]
+        },
+        {
+            "columns": [
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_receta",
+                    "is_nullable": "NO",
+                    "column_default": "nextval('veterinarias.historia_recetas_id_receta_seq'::regclass)"
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_historia_clinica",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "medicamento",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "dosis",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "frecuencia",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "via_administracion",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "duracion",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "instrucciones",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "timestamp",
+                    "data_type": "timestamp without time zone",
+                    "column_name": "created_at",
+                    "is_nullable": "YES",
+                    "column_default": "now()"
+                }
+            ],
+            "indexes": [
+                {
+                    "index_name": "idx_receta_historia",
+                    "index_definition": "CREATE INDEX idx_receta_historia ON veterinarias.historia_recetas USING btree (id_historia_clinica)"
+                },
+                {
+                    "index_name": "historia_recetas_pkey",
+                    "index_definition": "CREATE UNIQUE INDEX historia_recetas_pkey ON veterinarias.historia_recetas USING btree (id_receta)"
+                }
+            ],
+            "triggers": [
+            ],
+            "table_name": "historia_recetas",
+            "rls_enabled": true,
+            "foreign_keys": [
+                {
+                    "column_name": "id_historia_clinica",
+                    "foreign_table": "historias_clinicas",
+                    "foreign_column": "id_historia_clinica",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "fk_receta_historia"
+                }
+            ],
+            "primary_keys": [
+                "id_receta"
+            ],
+            "rls_policies": [
+                {
+                    "cmd": "SELECT",
+                    "qual": "true",
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Cliente historia_recetas SELECT"
+                },
+                {
+                    "cmd": "ALL",
+                    "qual": "(id_historia_clinica IN ( SELECT historias_clinicas.id_historia_clinica\n   FROM veterinarias.historias_clinicas\n  WHERE (historias_clinicas.id_veterinaria = veterinarias.get_my_vet_id())))",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "(id_historia_clinica IN ( SELECT historias_clinicas.id_historia_clinica\n   FROM veterinarias.historias_clinicas\n  WHERE (historias_clinicas.id_veterinaria = veterinarias.get_my_vet_id())))",
+                    "policy_name": "Staff historia_recetas ALL"
+                }
+            ]
+        },
+        {
+            "columns": [
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_signo_vital",
+                    "is_nullable": "NO",
+                    "column_default": "nextval('veterinarias.historia_signos_vitales_id_signo_vital_seq'::regclass)"
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_historia_clinica",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "numeric",
+                    "data_type": "numeric",
+                    "column_name": "peso",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "numeric",
+                    "data_type": "numeric",
+                    "column_name": "temperatura",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "int4",
+                    "data_type": "integer",
+                    "column_name": "frecuencia_cardiaca",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "int4",
+                    "data_type": "integer",
+                    "column_name": "frecuencia_respiratoria",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "presion_arterial",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "hidratacion",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "mucosas",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "condicion_corporal",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "observaciones",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "timestamp",
+                    "data_type": "timestamp without time zone",
+                    "column_name": "created_at",
+                    "is_nullable": "YES",
+                    "column_default": "now()"
+                }
+            ],
+            "indexes": [
+                {
+                    "index_name": "idx_sv_historia",
+                    "index_definition": "CREATE INDEX idx_sv_historia ON veterinarias.historia_signos_vitales USING btree (id_historia_clinica)"
+                },
+                {
+                    "index_name": "historia_signos_vitales_pkey",
+                    "index_definition": "CREATE UNIQUE INDEX historia_signos_vitales_pkey ON veterinarias.historia_signos_vitales USING btree (id_signo_vital)"
+                },
+                {
+                    "index_name": "historia_signos_vitales_id_historia_clinica_key",
+                    "index_definition": "CREATE UNIQUE INDEX historia_signos_vitales_id_historia_clinica_key ON veterinarias.historia_signos_vitales USING btree (id_historia_clinica)"
+                }
+            ],
+            "triggers": [
+            ],
+            "table_name": "historia_signos_vitales",
+            "rls_enabled": true,
+            "foreign_keys": [
+                {
+                    "column_name": "id_historia_clinica",
+                    "foreign_table": "historias_clinicas",
+                    "foreign_column": "id_historia_clinica",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "fk_sv_historia"
+                }
+            ],
+            "primary_keys": [
+                "id_signo_vital"
+            ],
+            "rls_policies": [
+                {
+                    "cmd": "ALL",
+                    "qual": "(id_historia_clinica IN ( SELECT historias_clinicas.id_historia_clinica\n   FROM veterinarias.historias_clinicas\n  WHERE (historias_clinicas.id_veterinaria = veterinarias.get_my_vet_id())))",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "(id_historia_clinica IN ( SELECT historias_clinicas.id_historia_clinica\n   FROM veterinarias.historias_clinicas\n  WHERE (historias_clinicas.id_veterinaria = veterinarias.get_my_vet_id())))",
+                    "policy_name": "Staff historia_signos_vitales ALL"
+                },
+                {
+                    "cmd": "SELECT",
+                    "qual": "true",
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Cliente historia_signos_vitales SELECT"
+                }
+            ]
+        },
+        {
+            "columns": [
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_tratamiento",
+                    "is_nullable": "NO",
+                    "column_default": "nextval('veterinarias.historia_tratamientos_id_tratamiento_seq'::regclass)"
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_historia_clinica",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "tratamiento",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "indicaciones",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "int4",
+                    "data_type": "integer",
+                    "column_name": "duracion_dias",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "estado",
+                    "is_nullable": "YES",
+                    "column_default": "'ACTIVO'::character varying"
+                },
+                {
+                    "udt_name": "timestamp",
+                    "data_type": "timestamp without time zone",
+                    "column_name": "created_at",
+                    "is_nullable": "YES",
+                    "column_default": "now()"
+                }
+            ],
+            "indexes": [
+                {
+                    "index_name": "idx_trat_historia",
+                    "index_definition": "CREATE INDEX idx_trat_historia ON veterinarias.historia_tratamientos USING btree (id_historia_clinica)"
+                },
+                {
+                    "index_name": "historia_tratamientos_pkey",
+                    "index_definition": "CREATE UNIQUE INDEX historia_tratamientos_pkey ON veterinarias.historia_tratamientos USING btree (id_tratamiento)"
+                }
+            ],
+            "triggers": [
+            ],
+            "table_name": "historia_tratamientos",
+            "rls_enabled": true,
+            "foreign_keys": [
+                {
+                    "column_name": "id_historia_clinica",
+                    "foreign_table": "historias_clinicas",
+                    "foreign_column": "id_historia_clinica",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "fk_trat_historia"
+                }
+            ],
+            "primary_keys": [
+                "id_tratamiento"
+            ],
+            "rls_policies": [
+                {
+                    "cmd": "SELECT",
+                    "qual": "true",
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Cliente historia_tratamientos SELECT"
+                },
+                {
+                    "cmd": "ALL",
+                    "qual": "(id_historia_clinica IN ( SELECT historias_clinicas.id_historia_clinica\n   FROM veterinarias.historias_clinicas\n  WHERE (historias_clinicas.id_veterinaria = veterinarias.get_my_vet_id())))",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "(id_historia_clinica IN ( SELECT historias_clinicas.id_historia_clinica\n   FROM veterinarias.historias_clinicas\n  WHERE (historias_clinicas.id_veterinaria = veterinarias.get_my_vet_id())))",
+                    "policy_name": "Staff historia_tratamientos ALL"
+                }
+            ]
+        },
+        {
+            "columns": [
+                {
+                    "udt_name": "int4",
+                    "data_type": "integer",
+                    "column_name": "id_vacuna",
+                    "is_nullable": "NO",
+                    "column_default": "nextval('veterinarias.historial_vacunas_id_vacuna_seq'::regclass)"
+                },
+                {
+                    "udt_name": "int4",
+                    "data_type": "integer",
+                    "column_name": "id_veterinaria",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "int4",
+                    "data_type": "integer",
+                    "column_name": "id_mascota",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "timestamp",
+                    "data_type": "timestamp without time zone",
+                    "column_name": "fecha",
+                    "is_nullable": "NO",
+                    "column_default": "CURRENT_TIMESTAMP"
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "nombre_vacuna",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "descripcion",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "dosis",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "requiere_refuerzo",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "frecuencia",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "estado",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "timestamp",
+                    "data_type": "timestamp without time zone",
+                    "column_name": "created_at",
+                    "is_nullable": "NO",
+                    "column_default": "CURRENT_TIMESTAMP"
+                }
+            ],
+            "indexes": [
+                {
+                    "index_name": "historial_vacunas_pkey",
+                    "index_definition": "CREATE UNIQUE INDEX historial_vacunas_pkey ON veterinarias.historial_vacunas USING btree (id_vacuna)"
+                }
+            ],
+            "triggers": [
+            ],
+            "table_name": "historial_vacunas",
+            "rls_enabled": true,
+            "foreign_keys": [
+                {
+                    "column_name": "id_mascota",
+                    "foreign_table": "mascotas",
+                    "foreign_column": "id_mascota",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "fk_mascota"
+                },
+                {
+                    "column_name": "id_veterinaria",
+                    "foreign_table": "veterinarias",
+                    "foreign_column": "id_veterinaria",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "fk_veterinaria"
+                }
+            ],
+            "primary_keys": [
+                "id_vacuna"
+            ],
+            "rls_policies": [
+                {
+                    "cmd": "UPDATE",
+                    "qual": "true",
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Actualizacion anonima de historial_vacunas"
+                },
+                {
+                    "cmd": "ALL",
+                    "qual": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "policy_name": "Staff historial_vacunas ALL"
+                },
+                {
+                    "cmd": "INSERT",
+                    "qual": null,
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "true",
+                    "policy_name": "Escritura anonima de historial_vacunas"
+                },
+                {
+                    "cmd": "SELECT",
+                    "qual": "true",
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Cliente historial_vacunas SELECT"
+                },
+                {
+                    "cmd": "SELECT",
+                    "qual": "true",
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Lectura anonima de historial_vacunas"
+                }
+            ]
+        },
+        {
+            "columns": [
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_historia_clinica",
+                    "is_nullable": "NO",
+                    "column_default": "nextval('veterinarias.historias_clinicas_id_historia_clinica_seq'::regclass)"
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_veterinaria",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_mascota",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_cliente",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_personal",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "numero_historia",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "timestamp",
+                    "data_type": "timestamp without time zone",
+                    "column_name": "fecha_consulta",
+                    "is_nullable": "NO",
+                    "column_default": "now()"
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "tipo_consulta",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "motivo_consulta",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "anamnesis",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "estado_general",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "observaciones",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "estado",
+                    "is_nullable": "YES",
+                    "column_default": "'ABIERTA'::character varying"
+                },
+                {
+                    "udt_name": "timestamp",
+                    "data_type": "timestamp without time zone",
+                    "column_name": "created_at",
+                    "is_nullable": "YES",
+                    "column_default": "now()"
+                },
+                {
+                    "udt_name": "timestamp",
+                    "data_type": "timestamp without time zone",
+                    "column_name": "updated_at",
+                    "is_nullable": "YES",
+                    "column_default": null
+                }
+            ],
+            "indexes": [
+                {
+                    "index_name": "historias_clinicas_pkey",
+                    "index_definition": "CREATE UNIQUE INDEX historias_clinicas_pkey ON veterinarias.historias_clinicas USING btree (id_historia_clinica)"
+                },
+                {
+                    "index_name": "idx_hc_veterinaria",
+                    "index_definition": "CREATE INDEX idx_hc_veterinaria ON veterinarias.historias_clinicas USING btree (id_veterinaria)"
+                },
+                {
+                    "index_name": "idx_hc_fecha",
+                    "index_definition": "CREATE INDEX idx_hc_fecha ON veterinarias.historias_clinicas USING btree (fecha_consulta)"
+                },
+                {
+                    "index_name": "idx_hc_mascota",
+                    "index_definition": "CREATE INDEX idx_hc_mascota ON veterinarias.historias_clinicas USING btree (id_mascota)"
+                },
+                {
+                    "index_name": "historias_clinicas_numero_historia_key",
+                    "index_definition": "CREATE UNIQUE INDEX historias_clinicas_numero_historia_key ON veterinarias.historias_clinicas USING btree (numero_historia)"
+                },
+                {
+                    "index_name": "idx_hc_cliente",
+                    "index_definition": "CREATE INDEX idx_hc_cliente ON veterinarias.historias_clinicas USING btree (id_cliente)"
+                }
+            ],
+            "triggers": [
+            ],
+            "table_name": "historias_clinicas",
+            "rls_enabled": true,
+            "foreign_keys": [
+                {
+                    "column_name": "id_mascota",
+                    "foreign_table": "mascotas",
+                    "foreign_column": "id_mascota",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "fk_hc_mascota"
+                },
+                {
+                    "column_name": "id_personal",
+                    "foreign_table": "personal",
+                    "foreign_column": "id_persona",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "fk_hc_personal"
+                },
+                {
+                    "column_name": "id_veterinaria",
+                    "foreign_table": "veterinarias",
+                    "foreign_column": "id_veterinaria",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "fk_hc_veterinaria"
+                },
+                {
+                    "column_name": "id_cliente",
+                    "foreign_table": "clientes",
+                    "foreign_column": "id_cliente",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "fk_hc_cliente"
+                }
+            ],
+            "primary_keys": [
+                "id_historia_clinica"
+            ],
+            "rls_policies": [
+                {
+                    "cmd": "ALL",
+                    "qual": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "policy_name": "Staff historias_clinicas ALL"
+                },
+                {
+                    "cmd": "SELECT",
+                    "qual": "true",
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Cliente historias_clinicas SELECT"
+                }
+            ]
+        },
+        {
+            "columns": [
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_horario",
+                    "is_nullable": "NO",
+                    "column_default": "nextval('veterinarias.horarios_personal_id_horario_seq'::regclass)"
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_persona",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "int4",
+                    "data_type": "integer",
+                    "column_name": "dia_semana",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "time",
+                    "data_type": "time without time zone",
+                    "column_name": "hora_inicio",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "time",
+                    "data_type": "time without time zone",
+                    "column_name": "hora_fin",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "bool",
+                    "data_type": "boolean",
+                    "column_name": "activo",
+                    "is_nullable": "YES",
+                    "column_default": "true"
+                },
+                {
+                    "udt_name": "timestamp",
+                    "data_type": "timestamp without time zone",
+                    "column_name": "created_at",
+                    "is_nullable": "YES",
+                    "column_default": "now()"
+                }
+            ],
+            "indexes": [
+                {
+                    "index_name": "horarios_personal_pkey",
+                    "index_definition": "CREATE UNIQUE INDEX horarios_personal_pkey ON veterinarias.horarios_personal USING btree (id_horario)"
+                },
+                {
+                    "index_name": "idx_horarios_personal",
+                    "index_definition": "CREATE INDEX idx_horarios_personal ON veterinarias.horarios_personal USING btree (id_persona)"
+                },
+                {
+                    "index_name": "idx_horarios_personal_persona_dia_activo",
+                    "index_definition": "CREATE INDEX idx_horarios_personal_persona_dia_activo ON veterinarias.horarios_personal USING btree (id_persona, dia_semana, activo)"
+                }
+            ],
+            "triggers": [
+            ],
+            "table_name": "horarios_personal",
+            "rls_enabled": true,
+            "foreign_keys": [
+                {
+                    "column_name": "id_persona",
+                    "foreign_table": "personal",
+                    "foreign_column": "id_persona",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "fk_horario_personal"
+                }
+            ],
+            "primary_keys": [
+                "id_horario"
+            ],
+            "rls_policies": [
+                {
+                    "cmd": "SELECT",
+                    "qual": "true",
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Cliente horarios_personal SELECT"
+                },
+                {
+                    "cmd": "ALL",
+                    "qual": "(id_persona IN ( SELECT personal.id_persona\n   FROM veterinarias.personal\n  WHERE (personal.id_veterinaria = veterinarias.get_my_vet_id())))",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "(id_persona IN ( SELECT personal.id_persona\n   FROM veterinarias.personal\n  WHERE (personal.id_veterinaria = veterinarias.get_my_vet_id())))",
+                    "policy_name": "Staff horarios_personal ALL"
+                }
+            ]
+        },
+        {
+            "columns": [
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_hospitalizacion",
+                    "is_nullable": "NO",
+                    "column_default": "nextval('veterinarias.hospitalizaciones_id_hospitalizacion_seq'::regclass)"
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_historia_clinica",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "timestamp",
+                    "data_type": "timestamp without time zone",
+                    "column_name": "fecha_ingreso",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "timestamp",
+                    "data_type": "timestamp without time zone",
+                    "column_name": "fecha_alta",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "motivo",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "evolucion",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "observaciones",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "estado",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "timestamp",
+                    "data_type": "timestamp without time zone",
+                    "column_name": "created_at",
+                    "is_nullable": "YES",
+                    "column_default": "now()"
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_veterinaria",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_mascota",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "motivo_ingreso",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "habitacion",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "timestamptz",
+                    "data_type": "timestamp with time zone",
+                    "column_name": "updated_at",
+                    "is_nullable": "YES",
+                    "column_default": "now()"
+                }
+            ],
+            "indexes": [
+                {
+                    "index_name": "hospitalizaciones_pkey",
+                    "index_definition": "CREATE UNIQUE INDEX hospitalizaciones_pkey ON veterinarias.hospitalizaciones USING btree (id_hospitalizacion)"
+                },
+                {
+                    "index_name": "idx_hosp_historia",
+                    "index_definition": "CREATE INDEX idx_hosp_historia ON veterinarias.hospitalizaciones USING btree (id_historia_clinica)"
+                }
+            ],
+            "triggers": [
+            ],
+            "table_name": "hospitalizaciones",
+            "rls_enabled": true,
+            "foreign_keys": [
+                {
+                    "column_name": "id_historia_clinica",
+                    "foreign_table": "historias_clinicas",
+                    "foreign_column": "id_historia_clinica",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "fk_hosp_historia"
+                },
+                {
+                    "column_name": "id_mascota",
+                    "foreign_table": "mascotas",
+                    "foreign_column": "id_mascota",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "hospitalizaciones_id_mascota_fkey"
+                },
+                {
+                    "column_name": "id_veterinaria",
+                    "foreign_table": "veterinarias",
+                    "foreign_column": "id_veterinaria",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "hospitalizaciones_id_veterinaria_fkey"
+                }
+            ],
+            "primary_keys": [
+                "id_hospitalizacion"
+            ],
+            "rls_policies": [
+                {
+                    "cmd": "SELECT",
+                    "qual": "true",
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Cliente hospitalizaciones SELECT"
+                },
+                {
+                    "cmd": "ALL",
+                    "qual": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "policy_name": "Staff hospitalizaciones ALL"
+                }
+            ]
+        },
+        {
+            "columns": [
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_mascota",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_veterinaria",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_cliente",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "nombre",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "especie",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "raza",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "int4",
+                    "data_type": "integer",
+                    "column_name": "edad",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "int4",
+                    "data_type": "integer",
+                    "column_name": "edad_meses",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "date",
+                    "data_type": "date",
+                    "column_name": "fecha_nac",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "float8",
+                    "data_type": "double precision",
+                    "column_name": "peso",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "foto_url",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "alertas",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "timestamptz",
+                    "data_type": "timestamp with time zone",
+                    "column_name": "fecha_crea",
+                    "is_nullable": "YES",
+                    "column_default": "now()"
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "sexo",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "estado",
+                    "is_nullable": "NO",
+                    "column_default": "'ACTIVO'::character varying"
+                }
+            ],
+            "indexes": [
+                {
+                    "index_name": "mascotas_pkey",
+                    "index_definition": "CREATE UNIQUE INDEX mascotas_pkey ON veterinarias.mascotas USING btree (id_mascota)"
+                }
+            ],
+            "triggers": [
+            ],
+            "table_name": "mascotas",
+            "rls_enabled": true,
+            "foreign_keys": [
+                {
+                    "column_name": "id_veterinaria",
+                    "foreign_table": "veterinarias",
+                    "foreign_column": "id_veterinaria",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "mascotas_id_veterinaria_fkey"
+                },
+                {
+                    "column_name": "id_cliente",
+                    "foreign_table": "clientes",
+                    "foreign_column": "id_cliente",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "mascotas_id_cliente_fkey"
+                }
+            ],
+            "primary_keys": [
+                "id_mascota"
+            ],
+            "rls_policies": [
+                {
+                    "cmd": "SELECT",
+                    "qual": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Staff mascotas SELECT"
+                },
+                {
+                    "cmd": "INSERT",
+                    "qual": null,
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "policy_name": "Staff mascotas INSERT"
+                },
+                {
+                    "cmd": "DELETE",
+                    "qual": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Staff mascotas DELETE"
+                },
+                {
+                    "cmd": "SELECT",
+                    "qual": "true",
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Lectura anonima de mascotas"
+                },
+                {
+                    "cmd": "INSERT",
+                    "qual": null,
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "true",
+                    "policy_name": "Escritura anonima de mascotas"
+                },
+                {
+                    "cmd": "UPDATE",
+                    "qual": "true",
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Actualizacion anonima de mascotas"
+                },
+                {
+                    "cmd": "UPDATE",
+                    "qual": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "policy_name": "Staff mascotas UPDATE"
+                }
+            ]
+        },
+        {
+            "columns": [
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_publicacion",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_veterinaria",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "topic",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "titulo",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "tipo",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "evento",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "jsonb",
+                    "data_type": "jsonb",
+                    "column_name": "detalle",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "timestamptz",
+                    "data_type": "timestamp with time zone",
+                    "column_name": "created_at",
+                    "is_nullable": "NO",
+                    "column_default": "now()"
+                }
+            ],
+            "indexes": [
+                {
+                    "index_name": "notificaciones_trace_pkey",
+                    "index_definition": "CREATE UNIQUE INDEX notificaciones_trace_pkey ON veterinarias.notificaciones_trace USING btree (id)"
+                },
+                {
+                    "index_name": "idx_notif_trace_publicacion",
+                    "index_definition": "CREATE INDEX idx_notif_trace_publicacion ON veterinarias.notificaciones_trace USING btree (id_publicacion)"
+                },
+                {
+                    "index_name": "idx_notif_trace_created_at",
+                    "index_definition": "CREATE INDEX idx_notif_trace_created_at ON veterinarias.notificaciones_trace USING btree (created_at DESC)"
+                }
+            ],
+            "triggers": [
+            ],
+            "table_name": "notificaciones_trace",
+            "rls_enabled": true,
+            "foreign_keys": [
+            ],
+            "primary_keys": [
+                "id"
+            ],
+            "rls_policies": [
+                {
+                    "cmd": "INSERT",
+                    "qual": null,
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "true",
+                    "policy_name": "Staff notificaciones_trace INSERT"
+                },
+                {
+                    "cmd": "INSERT",
+                    "qual": null,
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "true",
+                    "policy_name": "Cliente notificaciones_trace INSERT"
+                },
+                {
+                    "cmd": "SELECT",
+                    "qual": "true",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Staff notificaciones_trace SELECT"
+                }
+            ]
+        },
+        {
+            "columns": [
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_permiso",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "codigo",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "nombre",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "descripcion",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "modulo",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "timestamptz",
+                    "data_type": "timestamp with time zone",
+                    "column_name": "fecha_crea",
+                    "is_nullable": "YES",
+                    "column_default": "now()"
+                }
+            ],
+            "indexes": [
+                {
+                    "index_name": "permisos_pkey",
+                    "index_definition": "CREATE UNIQUE INDEX permisos_pkey ON veterinarias.permisos USING btree (id_permiso)"
+                },
+                {
+                    "index_name": "permisos_codigo_key",
+                    "index_definition": "CREATE UNIQUE INDEX permisos_codigo_key ON veterinarias.permisos USING btree (codigo)"
+                }
+            ],
+            "triggers": [
+            ],
+            "table_name": "permisos",
+            "rls_enabled": true,
+            "foreign_keys": [
+            ],
+            "primary_keys": [
+                "id_permiso"
+            ],
+            "rls_policies": [
+                {
+                    "cmd": "SELECT",
+                    "qual": "true",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Staff permisos SELECT"
+                }
+            ]
+        },
+        {
+            "columns": [
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_persona",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_veterinaria",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "nombres",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "apellidos",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "email",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "telefono",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "rol",
+                    "is_nullable": "YES",
+                    "column_default": "'PRO'::text"
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "estado",
+                    "is_nullable": "YES",
+                    "column_default": "'VIG'::text"
+                },
+                {
+                    "udt_name": "uuid",
+                    "data_type": "uuid",
+                    "column_name": "user_id",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "foto_url",
+                    "is_nullable": "YES",
+                    "column_default": null
+                }
+            ],
+            "indexes": [
+                {
+                    "index_name": "personal_email_id_veterinaria_key",
+                    "index_definition": "CREATE UNIQUE INDEX personal_email_id_veterinaria_key ON veterinarias.personal USING btree (id_veterinaria, email)"
+                },
+                {
+                    "index_name": "personal_pkey",
+                    "index_definition": "CREATE UNIQUE INDEX personal_pkey ON veterinarias.personal USING btree (id_persona)"
+                }
+            ],
+            "triggers": [
+            ],
+            "table_name": "personal",
+            "rls_enabled": true,
+            "foreign_keys": [
+                {
+                    "column_name": "id_veterinaria",
+                    "foreign_table": "veterinarias",
+                    "foreign_column": "id_veterinaria",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "personal_id_veterinaria_fkey"
+                }
+            ],
+            "primary_keys": [
+                "id_persona"
+            ],
+            "rls_policies": [
+                {
+                    "cmd": "INSERT",
+                    "qual": null,
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "true",
+                    "policy_name": "Escritura anonima personal"
+                },
+                {
+                    "cmd": "ALL",
+                    "qual": "true",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "true",
+                    "policy_name": "Acceso total a autenticados personal"
+                },
+                {
+                    "cmd": "UPDATE",
+                    "qual": "((id_veterinaria = veterinarias.get_my_vet_id()) OR (user_id = auth.uid()))",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "((id_veterinaria = veterinarias.get_my_vet_id()) OR (user_id = auth.uid()))",
+                    "policy_name": "Staff personal UPDATE"
+                },
+                {
+                    "cmd": "SELECT",
+                    "qual": "((id_veterinaria = veterinarias.get_my_vet_id()) OR (user_id = auth.uid()))",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Staff personal SELECT"
+                },
+                {
+                    "cmd": "INSERT",
+                    "qual": null,
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "((id_veterinaria = veterinarias.get_my_vet_id()) OR (user_id = auth.uid()))",
+                    "policy_name": "Staff personal INSERT"
+                },
+                {
+                    "cmd": "DELETE",
+                    "qual": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Staff personal DELETE"
+                },
+                {
+                    "cmd": "SELECT",
+                    "qual": "true",
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Lectura anonima personal"
+                }
+            ]
+        },
+        {
+            "columns": [
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_publicacion",
+                    "is_nullable": "NO",
+                    "column_default": "nextval('veterinarias.publicaciones_id_publicacion_seq'::regclass)"
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_veterinaria",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "tipo",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "titulo",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "resumen",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "contenido",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "imagen_url",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "boton_texto",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "boton_accion",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "timestamp",
+                    "data_type": "timestamp without time zone",
+                    "column_name": "fecha_inicio",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "timestamp",
+                    "data_type": "timestamp without time zone",
+                    "column_name": "fecha_fin",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "bool",
+                    "data_type": "boolean",
+                    "column_name": "activo",
+                    "is_nullable": "YES",
+                    "column_default": "true"
+                },
+                {
+                    "udt_name": "timestamp",
+                    "data_type": "timestamp without time zone",
+                    "column_name": "created_at",
+                    "is_nullable": "YES",
+                    "column_default": "now()"
+                }
+            ],
+            "indexes": [
+                {
+                    "index_name": "publicaciones_pkey",
+                    "index_definition": "CREATE UNIQUE INDEX publicaciones_pkey ON veterinarias.publicaciones USING btree (id_publicacion)"
+                }
+            ],
+            "triggers": [
+                {
+                    "trigger_name": "trg_trace_publicacion_insert",
+                    "action_timing": "AFTER",
+                    "action_statement": "EXECUTE FUNCTION veterinarias.fn_trace_publicacion_insert()",
+                    "event_manipulation": "INSERT"
+                },
+                {
+                    "trigger_name": "trg_notify_nueva_publicacion",
+                    "action_timing": "AFTER",
+                    "action_statement": "EXECUTE FUNCTION veterinarias.fn_notify_nueva_publicacion()",
+                    "event_manipulation": "INSERT"
+                }
+            ],
+            "table_name": "publicaciones",
+            "rls_enabled": true,
+            "foreign_keys": [
+                {
+                    "column_name": "id_veterinaria",
+                    "foreign_table": "veterinarias",
+                    "foreign_column": "id_veterinaria",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "fk_publicacion_veterinaria"
+                }
+            ],
+            "primary_keys": [
+                "id_publicacion"
+            ],
+            "rls_policies": [
+                {
+                    "cmd": "SELECT",
+                    "qual": "true",
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Cliente publicaciones SELECT"
+                },
+                {
+                    "cmd": "ALL",
+                    "qual": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "policy_name": "Staff publicaciones ALL"
+                }
+            ]
+        },
+        {
+            "columns": [
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_rol",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_veterinaria",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "nombre",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "descripcion",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "bool",
+                    "data_type": "boolean",
+                    "column_name": "activo",
+                    "is_nullable": "NO",
+                    "column_default": "true"
+                },
+                {
+                    "udt_name": "bool",
+                    "data_type": "boolean",
+                    "column_name": "es_sistema",
+                    "is_nullable": "NO",
+                    "column_default": "false"
+                },
+                {
+                    "udt_name": "timestamptz",
+                    "data_type": "timestamp with time zone",
+                    "column_name": "fecha_crea",
+                    "is_nullable": "YES",
+                    "column_default": "now()"
+                }
+            ],
+            "indexes": [
+                {
+                    "index_name": "roles_pkey",
+                    "index_definition": "CREATE UNIQUE INDEX roles_pkey ON veterinarias.roles USING btree (id_rol)"
+                },
+                {
+                    "index_name": "roles_nombre_veterinaria_unique",
+                    "index_definition": "CREATE UNIQUE INDEX roles_nombre_veterinaria_unique ON veterinarias.roles USING btree (id_veterinaria, nombre)"
+                }
+            ],
+            "triggers": [
+            ],
+            "table_name": "roles",
+            "rls_enabled": true,
+            "foreign_keys": [
+                {
+                    "column_name": "id_veterinaria",
+                    "foreign_table": "veterinarias",
+                    "foreign_column": "id_veterinaria",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "roles_id_veterinaria_fkey"
+                }
+            ],
+            "primary_keys": [
+                "id_rol"
+            ],
+            "rls_policies": [
+                {
+                    "cmd": "ALL",
+                    "qual": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "policy_name": "Staff roles ALL"
+                },
+                {
+                    "cmd": "ALL",
+                    "qual": "true",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "true",
+                    "policy_name": "Acceso total a autenticados roles"
+                }
+            ]
+        },
+        {
+            "columns": [
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_rol",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_permiso",
+                    "is_nullable": "NO",
+                    "column_default": null
+                }
+            ],
+            "indexes": [
+                {
+                    "index_name": "roles_permisos_pkey",
+                    "index_definition": "CREATE UNIQUE INDEX roles_permisos_pkey ON veterinarias.roles_permisos USING btree (id_rol, id_permiso)"
+                }
+            ],
+            "triggers": [
+            ],
+            "table_name": "roles_permisos",
+            "rls_enabled": true,
+            "foreign_keys": [
+                {
+                    "column_name": "id_rol",
+                    "foreign_table": "roles",
+                    "foreign_column": "id_rol",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "roles_permisos_id_rol_fkey"
+                },
+                {
+                    "column_name": "id_permiso",
+                    "foreign_table": "permisos",
+                    "foreign_column": "id_permiso",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "roles_permisos_id_permiso_fkey"
+                }
+            ],
+            "primary_keys": [
+                "id_rol",
+                "id_permiso"
+            ],
+            "rls_policies": [
+                {
+                    "cmd": "ALL",
+                    "qual": "(id_rol IN ( SELECT roles.id_rol\n   FROM veterinarias.roles\n  WHERE (roles.id_veterinaria = veterinarias.get_my_vet_id())))",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "(id_rol IN ( SELECT roles.id_rol\n   FROM veterinarias.roles\n  WHERE (roles.id_veterinaria = veterinarias.get_my_vet_id())))",
+                    "policy_name": "Staff roles_permisos ALL"
+                },
+                {
+                    "cmd": "ALL",
+                    "qual": "true",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "true",
+                    "policy_name": "Acceso total a autenticados roles_permisos"
+                }
+            ]
+        },
+        {
+            "columns": [
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_servicio",
+                    "is_nullable": "NO",
+                    "column_default": "nextval('veterinarias.servicios_id_servicio_seq'::regclass)"
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_veterinaria",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "nombre",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "descripcion",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "int4",
+                    "data_type": "integer",
+                    "column_name": "duracion_minutos",
+                    "is_nullable": "NO",
+                    "column_default": "20"
+                },
+                {
+                    "udt_name": "numeric",
+                    "data_type": "numeric",
+                    "column_name": "precio",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "varchar",
+                    "data_type": "character varying",
+                    "column_name": "color",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "bool",
+                    "data_type": "boolean",
+                    "column_name": "activo",
+                    "is_nullable": "YES",
+                    "column_default": "true"
+                },
+                {
+                    "udt_name": "timestamp",
+                    "data_type": "timestamp without time zone",
+                    "column_name": "created_at",
+                    "is_nullable": "YES",
+                    "column_default": "now()"
+                }
+            ],
+            "indexes": [
+                {
+                    "index_name": "servicios_pkey",
+                    "index_definition": "CREATE UNIQUE INDEX servicios_pkey ON veterinarias.servicios USING btree (id_servicio)"
+                }
+            ],
+            "triggers": [
+            ],
+            "table_name": "servicios",
+            "rls_enabled": true,
+            "foreign_keys": [
+                {
+                    "column_name": "id_veterinaria",
+                    "foreign_table": "veterinarias",
+                    "foreign_column": "id_veterinaria",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "fk_servicio_veterinaria"
+                }
+            ],
+            "primary_keys": [
+                "id_servicio"
+            ],
+            "rls_policies": [
+                {
+                    "cmd": "SELECT",
+                    "qual": "true",
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Cliente servicios SELECT"
+                },
+                {
+                    "cmd": "ALL",
+                    "qual": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "policy_name": "Staff servicios ALL"
+                }
+            ]
+        },
+        {
+            "columns": [
+                {
+                    "udt_name": "uuid",
+                    "data_type": "uuid",
+                    "column_name": "id",
+                    "is_nullable": "NO",
+                    "column_default": "gen_random_uuid()"
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "id_entidad",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "plan_id",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "tipo_temporalidad",
+                    "data_type": "USER-DEFINED",
+                    "column_name": "temporalidad",
+                    "is_nullable": "NO",
+                    "column_default": "'mensual'::veterinarias.tipo_temporalidad"
+                },
+                {
+                    "udt_name": "estado_suscripcion",
+                    "data_type": "USER-DEFINED",
+                    "column_name": "estado",
+                    "is_nullable": "NO",
+                    "column_default": "'trial'::veterinarias.estado_suscripcion"
+                },
+                {
+                    "udt_name": "timestamptz",
+                    "data_type": "timestamp with time zone",
+                    "column_name": "fecha_creacion",
+                    "is_nullable": "NO",
+                    "column_default": "now()"
+                },
+                {
+                    "udt_name": "timestamptz",
+                    "data_type": "timestamp with time zone",
+                    "column_name": "fecha_inicio_suscripcion",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "timestamptz",
+                    "data_type": "timestamp with time zone",
+                    "column_name": "fecha_vencimiento_trial",
+                    "is_nullable": "YES",
+                    "column_default": "(now() + '15 days'::interval)"
+                },
+                {
+                    "udt_name": "timestamptz",
+                    "data_type": "timestamp with time zone",
+                    "column_name": "fecha_ultimo_pago",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "timestamptz",
+                    "data_type": "timestamp with time zone",
+                    "column_name": "fecha_proximo_vencimiento",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "bool",
+                    "data_type": "boolean",
+                    "column_name": "renovacion_automatica",
+                    "is_nullable": "NO",
+                    "column_default": "true"
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "stripe_subscription_id",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "timestamptz",
+                    "data_type": "timestamp with time zone",
+                    "column_name": "updated_at",
+                    "is_nullable": "NO",
+                    "column_default": "now()"
+                }
+            ],
+            "indexes": [
+                {
+                    "index_name": "idx_suscripcion_estado",
+                    "index_definition": "CREATE INDEX idx_suscripcion_estado ON veterinarias.suscripciones USING btree (estado)"
+                },
+                {
+                    "index_name": "idx_suscripcion_agencia_id",
+                    "index_definition": "CREATE INDEX idx_suscripcion_agencia_id ON veterinarias.suscripciones USING btree (id_entidad)"
+                },
+                {
+                    "index_name": "suscripcion_agencias_pkey",
+                    "index_definition": "CREATE UNIQUE INDEX suscripcion_agencias_pkey ON veterinarias.suscripciones USING btree (id)"
+                }
+            ],
+            "triggers": [
+            ],
+            "table_name": "suscripciones",
+            "rls_enabled": true,
+            "foreign_keys": [
+            ],
+            "primary_keys": [
+                "id"
+            ],
+            "rls_policies": [
+                {
+                    "cmd": "SELECT",
+                    "qual": "true",
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Lectura anonima suscripciones"
+                },
+                {
+                    "cmd": "INSERT",
+                    "qual": null,
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "true",
+                    "policy_name": "Escritura anonima suscripciones"
+                },
+                {
+                    "cmd": "ALL",
+                    "qual": "true",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "true",
+                    "policy_name": "Acceso total a autenticados suscripciones"
+                }
+            ]
+        },
+        {
+            "columns": [
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_persona",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_rol",
+                    "is_nullable": "NO",
+                    "column_default": null
+                }
+            ],
+            "indexes": [
+                {
+                    "index_name": "usuarios_roles_pkey",
+                    "index_definition": "CREATE UNIQUE INDEX usuarios_roles_pkey ON veterinarias.usuarios_roles USING btree (id_persona)"
+                }
+            ],
+            "triggers": [
+            ],
+            "table_name": "usuarios_roles",
+            "rls_enabled": true,
+            "foreign_keys": [
+                {
+                    "column_name": "id_persona",
+                    "foreign_table": "personal",
+                    "foreign_column": "id_persona",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "usuarios_roles_id_persona_fkey"
+                },
+                {
+                    "column_name": "id_rol",
+                    "foreign_table": "roles",
+                    "foreign_column": "id_rol",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "usuarios_roles_id_rol_fkey"
+                }
+            ],
+            "primary_keys": [
+                "id_persona"
+            ],
+            "rls_policies": [
+                {
+                    "cmd": "ALL",
+                    "qual": "(id_persona IN ( SELECT personal.id_persona\n   FROM veterinarias.personal\n  WHERE (personal.id_veterinaria = veterinarias.get_my_vet_id())))",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "(id_persona IN ( SELECT personal.id_persona\n   FROM veterinarias.personal\n  WHERE (personal.id_veterinaria = veterinarias.get_my_vet_id())))",
+                    "policy_name": "Staff usuarios_roles ALL"
+                }
+            ]
+        },
+        {
+            "columns": [
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "id_veterinaria",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "nombre",
+                    "is_nullable": "NO",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "direccion",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "telefono",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "email",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "estado",
+                    "is_nullable": "YES",
+                    "column_default": "'CAR'::text"
+                },
+                {
+                    "udt_name": "timestamptz",
+                    "data_type": "timestamp with time zone",
+                    "column_name": "created_at",
+                    "is_nullable": "YES",
+                    "column_default": "now()"
+                },
+                {
+                    "udt_name": "int8",
+                    "data_type": "bigint",
+                    "column_name": "depto",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "zona",
+                    "is_nullable": "YES",
+                    "column_default": null
+                },
+                {
+                    "udt_name": "text",
+                    "data_type": "text",
+                    "column_name": "presentacion",
+                    "is_nullable": "YES",
+                    "column_default": null
+                }
+            ],
+            "indexes": [
+                {
+                    "index_name": "veterinarias_pkey",
+                    "index_definition": "CREATE UNIQUE INDEX veterinarias_pkey ON veterinarias.veterinarias USING btree (id_veterinaria)"
+                }
+            ],
+            "triggers": [
+                {
+                    "trigger_name": "trigger_crear_roles_permisos_defecto",
+                    "action_timing": "AFTER",
+                    "action_statement": "EXECUTE FUNCTION crear_roles_permisos_por_defecto()",
+                    "event_manipulation": "INSERT"
+                }
+            ],
+            "table_name": "veterinarias",
+            "rls_enabled": true,
+            "foreign_keys": [
+                {
+                    "column_name": "depto",
+                    "foreign_table": "departamentos",
+                    "foreign_column": "id_depto",
+                    "foreign_schema": "veterinarias",
+                    "constraint_name": "veterinarias_depto_fkey"
+                }
+            ],
+            "primary_keys": [
+                "id_veterinaria"
+            ],
+            "rls_policies": [
+                {
+                    "cmd": "SELECT",
+                    "qual": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Staff veterinarias SELECT"
+                },
+                {
+                    "cmd": "UPDATE",
+                    "qual": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "policy_name": "Staff veterinarias UPDATE"
+                },
+                {
+                    "cmd": "INSERT",
+                    "qual": null,
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "true",
+                    "policy_name": "Staff veterinarias INSERT"
+                },
+                {
+                    "cmd": "SELECT",
+                    "qual": "true",
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Cliente veterinarias SELECT"
+                },
+                {
+                    "cmd": "INSERT",
+                    "qual": null,
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "true",
+                    "policy_name": "Escritura anonima veterinarias"
+                },
+                {
+                    "cmd": "SELECT",
+                    "qual": "true",
+                    "roles": [
+                        "anon"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Lectura anonima veterinarias"
+                },
+                {
+                    "cmd": "DELETE",
+                    "qual": "(id_veterinaria = veterinarias.get_my_vet_id())",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": null,
+                    "policy_name": "Staff veterinarias DELETE"
+                },
+                {
+                    "cmd": "ALL",
+                    "qual": "true",
+                    "roles": [
+                        "authenticated"
+                    ],
+                    "permissive": "PERMISSIVE",
+                    "with_check": "true",
+                    "policy_name": "Acceso total a autenticados veterinarias"
+                }
+            ]
+        }
+    ],
+    "functions": [
+        {
+            "arguments": "",
+            "definition": "CREATE OR REPLACE FUNCTION veterinarias.fn_notify_nuevo_aviso_cliente()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\nAS $function$\r\nDECLARE\r\n    v_project_ref    TEXT := 'ykzsdqlvrvbybseaulpz';        -- Mismo Project Ref de la app\r\n    v_service_key    TEXT := 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlrenNkcWx2cnZieWJzZWF1bHB6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3ODI0MjY1MSwiZXhwIjoyMDkzODE4NjUxfQ.PBary1Sfby3rQZBiJFdmvB15RYQPa9_LldgF3W45zVs';\r\n    v_edge_url       TEXT;\r\n    v_payload        JSONB;\r\nBEGIN\r\n    v_edge_url := 'https://' || v_project_ref || '.supabase.co/functions/v1/push-aviso-cliente';\r\n\r\n    -- Construir el payload\r\n    v_payload := jsonb_build_object(\r\n        'type',    'INSERT',\r\n        'table',   'avisos_cliente',\r\n        'schema',  'veterinarias',\r\n        'record',  jsonb_build_object(\r\n            'id_aviso',        NEW.id_aviso,\r\n            'id_veterinaria',  NEW.id_veterinaria,\r\n            'id_cliente',      NEW.id_cliente,\r\n            'titulo',          NEW.titulo,\r\n            'cuerpo',          NEW.cuerpo,\r\n            'leido',           NEW.leido,\r\n            'created_at',      NEW.created_at\r\n        ),\r\n        'old_record', NULL\r\n    );\r\n\r\n    -- Llamar a la Edge Function\r\n    PERFORM net.http_post(\r\n        url     := v_edge_url,\r\n        headers := jsonb_build_object(\r\n            'Content-Type',  'application/json',\r\n            'Authorization', 'Bearer ' || v_service_key\r\n        ),\r\n        body    := v_payload\r\n    );\r\n\r\n    RETURN NEW;\r\n\r\nEXCEPTION WHEN OTHERS THEN\r\n    -- No interrumpir el INSERT si falla la notificación\r\n    RAISE WARNING '[fn_notify_nuevo_aviso_cliente] Error al llamar Edge Function: % %', SQLERRM, SQLSTATE;\r\n    RETURN NEW;\r\nEND;\r\n$function$\n",
+            "return_type": "trigger",
+            "function_name": "fn_notify_nuevo_aviso_cliente"
+        },
+        {
+            "arguments": "",
+            "definition": "CREATE OR REPLACE FUNCTION veterinarias.fn_trace_publicacion_insert()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\nAS $function$\r\nDECLARE\r\n    v_topic TEXT;\r\nBEGIN\r\n    v_topic := 'veterinaria_' || NEW.id_veterinaria;\r\n\r\n    INSERT INTO veterinarias.notificaciones_trace\r\n        (id_publicacion, id_veterinaria, topic, titulo, tipo, evento, detalle)\r\n    VALUES (\r\n        NEW.id_publicacion,\r\n        NEW.id_veterinaria,\r\n        v_topic,\r\n        NEW.titulo,\r\n        NEW.tipo,\r\n        'PUBLICACION_CREADA',\r\n        jsonb_build_object(\r\n            'resumen', NEW.resumen,\r\n            'activo', NEW.activo,\r\n            'created_at', NEW.created_at\r\n        )\r\n    );\r\n\r\n    RETURN NEW;\r\nEND;\r\n$function$\n",
+            "return_type": "trigger",
+            "function_name": "fn_trace_publicacion_insert"
+        },
+        {
+            "arguments": "",
+            "definition": "CREATE OR REPLACE FUNCTION veterinarias.fn_notify_nueva_publicacion()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\nAS $function$\r\nDECLARE\r\n    v_project_ref    TEXT := 'ykzsdqlvrvbybseaulpz';        -- ✅ Project Ref OK\r\n    v_service_key    TEXT := 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlrenNkcWx2cnZieWJzZWF1bHB6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3ODI0MjY1MSwiZXhwIjoyMDkzODE4NjUxfQ.PBary1Sfby3rQZBiJFdmvB15RYQPa9_LldgF3W45zVs';   -- ← reemplazar\r\n    v_edge_url       TEXT;\r\n    v_payload        JSONB;\r\nBEGIN\r\n    -- Solo disparar para publicaciones activas\r\n    IF NEW.activo = FALSE THEN\r\n        RETURN NEW;\r\n    END IF;\r\n\r\n    v_edge_url := 'https://' || v_project_ref || '.supabase.co/functions/v1/push-announcements';\r\n\r\n    -- Construir el payload en el mismo formato que Supabase Database Webhooks\r\n    v_payload := jsonb_build_object(\r\n        'type',    'INSERT',\r\n        'table',   'publicaciones',\r\n        'schema',  'veterinarias',\r\n        'record',  jsonb_build_object(\r\n            'id_publicacion',  NEW.id_publicacion,\r\n            'id_veterinaria',  NEW.id_veterinaria,\r\n            'tipo',            NEW.tipo,\r\n            'titulo',          NEW.titulo,\r\n            'resumen',         NEW.resumen,\r\n            'contenido',       NEW.contenido,\r\n            'imagen_url',      NEW.imagen_url,\r\n            'activo',          NEW.activo,\r\n            'created_at',      NEW.created_at\r\n        ),\r\n        'old_record', NULL\r\n    );\r\n\r\n    -- Llamar a la Edge Function de forma asíncrona\r\n    PERFORM net.http_post(\r\n        url     := v_edge_url,\r\n        headers := jsonb_build_object(\r\n            'Content-Type',  'application/json',\r\n            'Authorization', 'Bearer ' || v_service_key\r\n        ),\r\n        body    := v_payload\r\n    );\r\n\r\n    RETURN NEW;\r\n\r\nEXCEPTION WHEN OTHERS THEN\r\n    -- No interrumpir el INSERT si falla la notificación\r\n    RAISE WARNING '[fn_notify_nueva_publicacion] Error al llamar Edge Function: % %', SQLERRM, SQLSTATE;\r\n    RETURN NEW;\r\nEND;\r\n$function$\n",
+            "return_type": "trigger",
+            "function_name": "fn_notify_nueva_publicacion"
+        },
+        {
+            "arguments": "p_id_cliente integer",
+            "definition": "CREATE OR REPLACE FUNCTION veterinarias.get_mascotas_cliente(p_id_cliente integer)\n RETURNS SETOF veterinarias.mascotas\n LANGUAGE sql\n SECURITY DEFINER\nAS $function$\r\n  SELECT * FROM veterinarias.mascotas\r\n  WHERE id_cliente = p_id_cliente\r\n    AND estado = 'ACTIVO'\r\n  ORDER BY nombre ASC;\r\n$function$\n",
+            "return_type": "SETOF veterinarias.mascotas",
+            "function_name": "get_mascotas_cliente"
+        },
+        {
+            "arguments": "p_id_mascota integer",
+            "definition": "CREATE OR REPLACE FUNCTION veterinarias.cliente_soft_delete_mascota(p_id_mascota integer)\n RETURNS void\n LANGUAGE sql\n SECURITY DEFINER\nAS $function$\r\n  UPDATE veterinarias.mascotas\r\n  SET estado = 'EPC'\r\n  WHERE id_mascota = p_id_mascota;\r\n$function$\n",
+            "return_type": "void",
+            "function_name": "cliente_soft_delete_mascota"
+        },
+        {
+            "arguments": "",
+            "definition": "CREATE OR REPLACE FUNCTION veterinarias.get_my_vet_id()\n RETURNS bigint\n LANGUAGE plpgsql\n STABLE SECURITY DEFINER\n SET search_path TO 'veterinarias', 'public'\nAS $function$\r\nDECLARE\r\n    v_id_veterinaria bigint;\r\nBEGIN\r\n    -- Buscar id_veterinaria del usuario actual en la tabla personal\r\n    SELECT p.id_veterinaria\r\n    INTO v_id_veterinaria\r\n    FROM veterinarias.personal p\r\n    WHERE p.user_id = auth.uid()\r\n    LIMIT 1;\r\n    \r\n    -- Retornar NULL si no se encuentra (NO lanzar excepción)\r\n    RETURN v_id_veterinaria;\r\nEXCEPTION\r\n    WHEN OTHERS THEN\r\n        -- En caso de cualquier error, retornar NULL en lugar de propagar\r\n        RETURN NULL;\r\nEND;\r\n$function$\n",
+            "return_type": "bigint",
+            "function_name": "get_my_vet_id"
+        },
+        {
+            "arguments": "p_id_cliente bigint, p_fcm_token text",
+            "definition": "CREATE OR REPLACE FUNCTION veterinarias.registrar_fcm_token(p_id_cliente bigint, p_fcm_token text)\n RETURNS void\n LANGUAGE plpgsql\n SECURITY DEFINER\nAS $function$\r\nBEGIN\r\n    -- Paso 1: Limpiar el token si otro cliente ya lo tiene registrado\r\n    -- (evita que dos clientes compartan el mismo dispositivo/token)\r\n    UPDATE veterinarias.clientes\r\n    SET fcm_token = NULL\r\n    WHERE fcm_token = p_fcm_token\r\n      AND id_cliente <> p_id_cliente;\r\n\r\n    -- Paso 2: Asignar el token al cliente actual\r\n    UPDATE veterinarias.clientes\r\n    SET fcm_token = p_fcm_token\r\n    WHERE id_cliente = p_id_cliente;\r\nEND;\r\n$function$\n",
+            "return_type": "void",
+            "function_name": "registrar_fcm_token"
+        },
+        {
+            "arguments": "",
+            "definition": "CREATE OR REPLACE FUNCTION veterinarias.validar_solapamiento_citas()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n\r\n    IF EXISTS (\r\n        SELECT 1\r\n        FROM veterinarias.citas\r\n        WHERE id_persona = NEW.id_persona\r\n        AND estado NOT IN ('CANCELADA')\r\n        AND (\r\n            NEW.fecha_inicio < fecha_fin\r\n            AND NEW.fecha_fin > fecha_inicio\r\n        )\r\n        AND id_cita <> COALESCE(NEW.id_cita, 0)\r\n    ) THEN\r\n        RAISE EXCEPTION 'El veterinario ya tiene una cita en ese horario';\r\n    END IF;\r\n\r\n    RETURN NEW;\r\n\r\nEND;\r\n$function$\n",
+            "return_type": "trigger",
+            "function_name": "validar_solapamiento_citas"
+        },
+        {
+            "arguments": "p_id_cliente bigint",
+            "definition": "CREATE OR REPLACE FUNCTION veterinarias.limpiar_fcm_token(p_id_cliente bigint)\n RETURNS void\n LANGUAGE plpgsql\n SECURITY DEFINER\nAS $function$\r\nBEGIN\r\n    UPDATE veterinarias.clientes\r\n    SET fcm_token = NULL\r\n    WHERE id_cliente = p_id_cliente;\r\nEND;\r\n$function$\n",
+            "return_type": "void",
+            "function_name": "limpiar_fcm_token"
+        }
+    ],
+    "generated_at": "2026-09-11T12:28:05.713925+00:00"
+}
