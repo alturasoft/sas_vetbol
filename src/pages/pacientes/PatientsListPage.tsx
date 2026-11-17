@@ -203,8 +203,8 @@ export function PatientsListPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2.5">
-            <Dog className="w-7 h-7 text-emerald-600" />
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
+            <Dog className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
             Pacientes y Mascotas
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">

@@ -169,7 +169,7 @@ export function VisorPermisosPage() {
       {/* 1. Cabecera Principal */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2.5">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
             <KeyRound className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
             Mis Accesos y Permisos
           </h1>
@@ -274,7 +274,7 @@ export function VisorPermisosPage() {
               <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
                 Permisos Activos
               </span>
-              <div className="text-2xl font-black text-emerald-700 dark:text-emerald-300 mt-1">
+              <div className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1">
                 {stats.granted}
               </div>
             </div>
@@ -290,7 +290,7 @@ export function VisorPermisosPage() {
               <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 Restringidos
               </span>
-              <div className="text-2xl font-black text-slate-700 dark:text-slate-300 mt-1">
+              <div className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1">
                 {stats.restricted}
               </div>
             </div>
@@ -306,7 +306,7 @@ export function VisorPermisosPage() {
               <span className="text-xs font-semibold text-indigo-700 dark:text-indigo-400 uppercase tracking-wider">
                 Módulos con Acceso
               </span>
-              <div className="text-2xl font-black text-indigo-700 dark:text-indigo-300 mt-1">
+              <div className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1">
                 {stats.enabledModules} / {stats.totalModules}
               </div>
             </div>

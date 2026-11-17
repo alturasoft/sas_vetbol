@@ -364,8 +364,8 @@ export function PatientFormModal({
                         onClick={() => setSelectedClientId(client.id_cliente)}
                         className={`w-full flex items-center justify-between p-2 rounded-md text-left transition-colors text-xs ${
                           isSelected
-                            ? 'bg-emerald-50 text-emerald-900 border border-emerald-300 font-semibold'
-                            : 'hover:bg-slate-50 text-slate-700'
+                            ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-900 dark:text-emerald-100 border border-emerald-300 dark:border-emerald-800 font-semibold'
+                            : 'hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
                         }`}
                       >
                         <div className="flex items-center gap-2">
@@ -383,7 +383,7 @@ export function PatientFormModal({
                             </span>
                           )}
                         </div>
-                        {isSelected && <Check className="w-4 h-4 text-emerald-600" />}
+                        {isSelected && <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}
                       </button>
                     )
                   })
@@ -391,11 +391,11 @@ export function PatientFormModal({
               </div>
             </div>
           ) : (
-            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center gap-3">
-              <User className="w-4 h-4 text-emerald-600 shrink-0" />
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800 flex items-center gap-3">
+              <User className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <div className="text-xs">
-                <span className="text-slate-400 block">Tutor Asignado</span>
-                <span className="font-bold text-slate-800">
+                <span className="text-slate-400 dark:text-slate-500 block">Tutor Asignado</span>
+                <span className="font-bold text-slate-800 dark:text-slate-100">
                   {patient?.cliente
                     ? `${patient.cliente.nombres} ${patient.cliente.apellidos}`
                     : 'Sin tutor asignado'}
@@ -406,12 +406,12 @@ export function PatientFormModal({
 
           {/* Fotografía de la Mascota */}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-700 block">Fotografía del Paciente</label>
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">Fotografía del Paciente</label>
             <div className="flex items-center gap-4">
               <Avatar
                 src={photoPreview || undefined}
                 fallback={nombre || 'PET'}
-                className="w-16 h-16 rounded-2xl border-2 border-emerald-100 object-cover shadow-sm shrink-0"
+                className="w-16 h-16 rounded-2xl border-2 border-emerald-100 dark:border-emerald-800 object-cover shadow-sm shrink-0"
               />
 
               <div className="flex-1 space-y-1.5">
@@ -431,12 +431,12 @@ export function PatientFormModal({
                   onClick={() => fileInputRef.current?.click()}
                   className={`border border-dashed rounded-xl p-3 text-center cursor-pointer transition-all ${
                     isDragging
-                      ? 'border-emerald-500 bg-emerald-50/50'
-                      : 'border-slate-200 hover:border-emerald-400 hover:bg-slate-50'
+                      ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/40'
+                      : 'border-slate-200 dark:border-slate-800 hover:border-emerald-400 dark:hover:border-emerald-600 hover:bg-slate-50 dark:hover:bg-slate-800/50'
                   }`}
                 >
-                  <div className="flex items-center justify-center gap-2 text-xs text-slate-600">
-                    <Camera className="w-4 h-4 text-emerald-600" />
+                  <div className="flex items-center justify-center gap-2 text-xs text-slate-600 dark:text-slate-400">
+                    <Camera className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                     <span>Arrastra una foto o haz clic para seleccionarla</span>
                   </div>
                   <input

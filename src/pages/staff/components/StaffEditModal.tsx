@@ -176,23 +176,23 @@ export function StaffEditModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
       <div
-        className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]"
+        className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50">
           <div>
-            <h2 className="text-base font-bold text-slate-900">Editar Perfil de Personal</h2>
-            <p className="text-xs text-slate-500">
+            <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Editar Perfil de Personal</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Modifica los datos operativos, imagen de perfil o rol de acceso
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+            className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -201,14 +201,14 @@ export function StaffEditModal({
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
           {errorMessage && (
-            <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium flex items-start gap-2.5">
-              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+            <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900/60 text-rose-800 dark:text-rose-300 text-xs font-medium flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
               <span>{errorMessage}</span>
             </div>
           )}
 
           {/* Sección de Fotografía con Compresión WebP */}
-          <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+          <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800">
             <div className="relative group shrink-0">
               {photoPreview ? (
                 <img
@@ -217,7 +217,7 @@ export function StaffEditModal({
                   className="w-16 h-16 rounded-full object-cover border-2 border-emerald-500 shadow-xs"
                 />
               ) : (
-                <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-lg border-2 border-emerald-200">
+                <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 flex items-center justify-center font-bold text-lg border-2 border-emerald-200 dark:border-emerald-800">
                   {(nombres[0] || 'S') + (apellidos[0] || 'V')}
                 </div>
               )}
@@ -235,16 +235,16 @@ export function StaffEditModal({
 
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-800">Foto de Perfil</span>
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">Foto de Perfil</span>
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="text-xs font-medium text-emerald-600 hover:text-emerald-700 cursor-pointer"
+                  className="text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 cursor-pointer"
                 >
                   Subir nueva
                 </button>
               </div>
-              <p className="text-[11px] text-slate-500 mt-0.5">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                 Se optimizará a WebP de alta fidelidad antes de subir al almacenamiento.
               </p>
 
@@ -346,7 +346,7 @@ export function StaffEditModal({
 
           {/* Teléfono */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700">Teléfono / WhatsApp</label>
+            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Teléfono / WhatsApp</label>
             <div className="relative">
               <Phone className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
               <Input
@@ -361,14 +361,14 @@ export function StaffEditModal({
           {/* Selector de Rol Granular RBAC */}
           {rolesList.length > 0 && (
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                <Shield className="w-3.5 h-3.5 text-emerald-600" />
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <Shield className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                 Rol de Acceso y Permisos (RBAC)
               </label>
               <select
                 value={selectedRolId ?? ''}
                 onChange={(e) => handleSelectRbacRole(e.target.value)}
-                className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
                 <option value="">Predeterminado según función</option>
                 {rolesList.map((r) => (
@@ -377,14 +377,14 @@ export function StaffEditModal({
                   </option>
                 ))}
               </select>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-slate-400 dark:text-slate-500">
                 Seleccionar VETERINARIO sincroniza función médica (MED); cualquier otro rol sincroniza función administrativa (ADM).
               </p>
             </div>
           )}
 
           {/* Footer de Acciones */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
             <Button
               type="button"
               variant="outline"
@@ -397,7 +397,7 @@ export function StaffEditModal({
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs cursor-pointer"
+              className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs cursor-pointer shadow-xs"
             >
               {isSubmitting ? (
                 <>

@@ -155,22 +155,22 @@ export function StaffManagementPage() {
     switch (rol) {
       case 'PRO':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg bg-amber-50 text-amber-800 border border-amber-200">
-            <Crown className="w-3.5 h-3.5 text-amber-600" />
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60">
+            <Crown className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
             Propietario
           </span>
         )
       case 'MED':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200">
-            <Stethoscope className="w-3.5 h-3.5 text-emerald-600" />
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60">
+            <Stethoscope className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
             Médico Veterinario
           </span>
         )
       default:
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg bg-indigo-50 text-indigo-800 border border-indigo-200">
-            <Briefcase className="w-3.5 h-3.5 text-indigo-600" />
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60">
+            <Briefcase className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             Administrativo
           </span>
         )
@@ -182,7 +182,7 @@ export function StaffManagementPage() {
       {/* 1. Header de Página */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2.5">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
             <UserCheck className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
             Staff Médico y Personal
           </h1>
@@ -262,7 +262,7 @@ export function StaffManagementPage() {
               <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
                 Médicos Veterinarios
               </span>
-              <div className="text-2xl font-black text-emerald-700 dark:text-emerald-300 mt-0.5">{stats.doctors}</div>
+              <div className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-0.5">{stats.doctors}</div>
             </div>
             <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-100 dark:border-emerald-900/60">
               <Stethoscope className="w-5 h-5" />
@@ -276,7 +276,7 @@ export function StaffManagementPage() {
               <span className="text-xs font-semibold text-indigo-700 dark:text-indigo-400 uppercase tracking-wider">
                 Administrativos
               </span>
-              <div className="text-2xl font-black text-indigo-700 dark:text-indigo-300 mt-0.5">{stats.admins}</div>
+              <div className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-0.5">{stats.admins}</div>
             </div>
             <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-100 dark:border-indigo-900/60">
               <Briefcase className="w-5 h-5" />
@@ -290,7 +290,7 @@ export function StaffManagementPage() {
               <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
                 Propietarios / Directores
               </span>
-              <div className="text-2xl font-black text-amber-700 dark:text-amber-300 mt-0.5">{stats.owners}</div>
+              <div className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-0.5">{stats.owners}</div>
             </div>
             <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-100 dark:border-amber-900/60">
               <Crown className="w-5 h-5" />

@@ -1,32 +1,40 @@
+import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { RoleGuard } from '@/components/auth/RoleGuard'
 import { SubscriptionGuard } from '@/components/auth/SubscriptionGuard'
 import { PermissionGuard } from '@/components/auth/PermissionGuard'
+import { LoadingScreen } from '@/components/common/LoadingScreen'
 
-import { LoginPage } from '@/pages/auth/LoginPage'
-import { RegisterClinicPage } from '@/pages/auth/RegisterClinicPage'
-import { SubscriptionPaywallPage } from '@/pages/suscripcion/SubscriptionPaywallPage'
-import { DashboardOverviewPage } from '@/pages/dashboard/DashboardOverviewPage'
-import { AppointmentsCalendarPage } from '@/pages/citas/AppointmentsCalendarPage'
-import { ClientsListPage } from '@/pages/clientes/ClientsListPage'
-import { PatientsListPage } from '@/pages/pacientes/PatientsListPage'
-import { MedicalRecordsPage } from '@/pages/historia-clinica/MedicalRecordsPage'
-import { ConsultationWizardPage } from '@/pages/historia-clinica/ConsultationWizardPage'
-import { HospitalizationBoardPage } from '@/pages/hospitalizaciones/HospitalizationBoardPage'
-import { SurgeriesPage } from '@/pages/cirugias/SurgeriesPage'
-import { ClinicSettingsPage } from '@/pages/configuracion/ClinicSettingsPage'
-import { StaffManagementPage } from '@/pages/staff/StaffManagementPage'
-import { TenantsManagementPage } from '@/pages/superadmin/TenantsManagementPage'
-import { PublicacionesPage } from '@/pages/publicaciones/PublicacionesPage'
-import { VisorPermisosPage } from '@/pages/roles/VisorPermisosPage'
-import { RolesManagementPage } from '@/pages/roles/RolesManagementPage'
-import { RolePermissionsPage } from '@/pages/roles/RolePermissionsPage'
+// Rutas Públicas y Auth
+const LoginPage = lazy(() => import('@/pages/auth/LoginPage').then(m => ({ default: m.LoginPage })))
+const RegisterClinicPage = lazy(() => import('@/pages/auth/RegisterClinicPage').then(m => ({ default: m.RegisterClinicPage })))
+const SubscriptionPaywallPage = lazy(() => import('@/pages/suscripcion/SubscriptionPaywallPage').then(m => ({ default: m.SubscriptionPaywallPage })))
+
+// Módulos Clínicos Principales
+const DashboardOverviewPage = lazy(() => import('@/pages/dashboard/DashboardOverviewPage').then(m => ({ default: m.DashboardOverviewPage })))
+const AppointmentsCalendarPage = lazy(() => import('@/pages/citas/AppointmentsCalendarPage').then(m => ({ default: m.AppointmentsCalendarPage })))
+const ClientsListPage = lazy(() => import('@/pages/clientes/ClientsListPage').then(m => ({ default: m.ClientsListPage })))
+const PatientsListPage = lazy(() => import('@/pages/pacientes/PatientsListPage').then(m => ({ default: m.PatientsListPage })))
+const MedicalRecordsPage = lazy(() => import('@/pages/historia-clinica/MedicalRecordsPage').then(m => ({ default: m.MedicalRecordsPage })))
+const ConsultationWizardPage = lazy(() => import('@/pages/historia-clinica/ConsultationWizardPage').then(m => ({ default: m.ConsultationWizardPage })))
+const HospitalizationBoardPage = lazy(() => import('@/pages/hospitalizaciones/HospitalizationBoardPage').then(m => ({ default: m.HospitalizationBoardPage })))
+const SurgeriesPage = lazy(() => import('@/pages/cirugias/SurgeriesPage').then(m => ({ default: m.SurgeriesPage })))
+
+// Módulos Administrativos y Configuración
+const ClinicSettingsPage = lazy(() => import('@/pages/configuracion/ClinicSettingsPage').then(m => ({ default: m.ClinicSettingsPage })))
+const StaffManagementPage = lazy(() => import('@/pages/staff/StaffManagementPage').then(m => ({ default: m.StaffManagementPage })))
+const TenantsManagementPage = lazy(() => import('@/pages/superadmin/TenantsManagementPage').then(m => ({ default: m.TenantsManagementPage })))
+const PublicacionesPage = lazy(() => import('@/pages/publicaciones/PublicacionesPage').then(m => ({ default: m.PublicacionesPage })))
+const VisorPermisosPage = lazy(() => import('@/pages/roles/VisorPermisosPage').then(m => ({ default: m.VisorPermisosPage })))
+const RolesManagementPage = lazy(() => import('@/pages/roles/RolesManagementPage').then(m => ({ default: m.RolesManagementPage })))
+const RolePermissionsPage = lazy(() => import('@/pages/roles/RolePermissionsPage').then(m => ({ default: m.RolePermissionsPage })))
 
 export function AppRouter() {
   return (
-    <Routes>
+    <Suspense fallback={<LoadingScreen message="Cargando módulo veterinario..." />}>
+      <Routes>
       {/* Public Routes */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterClinicPage />} />
@@ -182,5 +190,6 @@ export function AppRouter() {
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
+    </Suspense>
   )
 }

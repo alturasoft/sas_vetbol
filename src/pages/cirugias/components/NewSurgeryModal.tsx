@@ -406,7 +406,7 @@ export const NewSurgeryModal: React.FC<NewSurgeryModalProps> = ({
               type="submit"
               size="sm"
               disabled={isSubmitting || !selectedPatient || selectedPatient.estado === 'EPC'}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs gap-2 shadow-xs"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs gap-2 shadow-xs"
             >
               {isSubmitting ? (
                 <>

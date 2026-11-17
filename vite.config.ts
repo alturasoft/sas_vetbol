@@ -22,6 +22,8 @@ export default defineConfig({
           query: ['@tanstack/react-query', 'zustand'],
           supabase: ['@supabase/supabase-js'],
           icons: ['lucide-react'],
+          validation: ['zod'],
+          utils: ['date-fns', 'clsx', 'tailwind-merge'],
         },
       },
     },

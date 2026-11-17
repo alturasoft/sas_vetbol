@@ -203,11 +203,11 @@ export function PublicacionesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-teal-600 text-white shadow-md shadow-teal-500/20">
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-600 text-white shadow-md shadow-emerald-500/20">
               <Megaphone className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                 Tablón de Anuncios y Noticias
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">

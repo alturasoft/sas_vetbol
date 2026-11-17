@@ -128,7 +128,8 @@ export function HospitalizationBoardPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
+            <BedDouble className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
             Control de Hospitalizaciones (Bed Management)
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
@@ -143,7 +144,7 @@ export function HospitalizationBoardPage() {
               setIsNewModalOpen(true)
             }}
             size="sm"
-            className="bg-amber-600 hover:bg-amber-700 text-white text-xs gap-2 shadow-xs"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs gap-2 shadow-xs"
           >
             <Plus className="w-4 h-4" />
             Ingresar Paciente
@@ -156,7 +157,7 @@ export function HospitalizationBoardPage() {
         <Card className="p-4 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 Pacientes Internados
               </p>
               <h3 className="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1">
@@ -172,7 +173,7 @@ export function HospitalizationBoardPage() {
         <Card className="p-4 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 Jaulas Disponibles
               </p>
               <h3 className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
@@ -188,14 +189,14 @@ export function HospitalizationBoardPage() {
         <Card className="p-4 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 Altas Médicas Registradas
               </p>
-              <h3 className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">
+              <h3 className="text-2xl font-bold text-sky-600 dark:text-sky-400 mt-1">
                 {altasMedicas}
               </h3>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-xl bg-sky-100 dark:bg-sky-950/80 text-sky-600 dark:text-sky-400 flex items-center justify-center font-bold">
               <HeartPulse className="w-5 h-5" />
             </div>
           </div>

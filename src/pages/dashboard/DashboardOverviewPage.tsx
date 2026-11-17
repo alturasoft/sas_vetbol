@@ -387,15 +387,15 @@ export function DashboardOverviewPage() {
 
       {/* Semantic Error Alert if fetch failed */}
       {error && (
-        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 flex items-start justify-between gap-3 text-xs">
+        <div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900/60 text-rose-800 dark:text-rose-200 flex items-start justify-between gap-3 text-xs">
           <div className="flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+            <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold">Error al conectar con la base de datos</p>
-              <p className="text-rose-700 mt-0.5">{error}</p>
+              <p className="font-semibold text-rose-900 dark:text-rose-100">Error al conectar con la base de datos</p>
+              <p className="text-rose-700 dark:text-rose-300 mt-0.5">{error}</p>
             </div>
           </div>
-          <Button size="sm" variant="outline" onClick={loadDashboardData} className="h-7 text-xs border-rose-300 hover:bg-rose-100">
+          <Button size="sm" variant="outline" onClick={loadDashboardData} className="h-7 text-xs border-rose-300 dark:border-rose-800 hover:bg-rose-100 dark:hover:bg-rose-900/40">
             Reintentar
           </Button>
         </div>

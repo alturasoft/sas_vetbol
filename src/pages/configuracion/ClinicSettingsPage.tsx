@@ -70,7 +70,7 @@ export function ClinicSettingsPage() {
   return (
     <div className="space-y-6 max-w-4xl">
       <div>
-        <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2.5">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
           <Building2 className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
           Configuración de la Clínica
         </h1>

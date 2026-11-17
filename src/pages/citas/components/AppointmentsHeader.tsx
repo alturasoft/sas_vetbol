@@ -19,10 +19,8 @@ export const AppointmentsHeader: React.FC<AppointmentsHeaderProps> = ({
   return (
     <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div className="space-y-1">
-        <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-3">
-          <span className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/50">
-            <CalendarIcon className="w-6 h-6" />
-          </span>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
+          <CalendarIcon className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
           Citas y Agenda Médica
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">

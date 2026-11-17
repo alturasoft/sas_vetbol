@@ -96,25 +96,25 @@ export function SurgeriesPage() {
     switch (estado) {
       case 'PROGRAMADA':
         return (
-          <Badge className="bg-[#3F51B5] hover:bg-[#3949AB] text-white text-[11px]">
+          <Badge variant="outline" className="bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800 text-[11px] font-semibold">
             Programada
           </Badge>
         )
       case 'EN_PROCESO':
         return (
-          <Badge className="bg-[#FF9800] hover:bg-[#F57C00] text-white text-[11px] animate-pulse">
+          <Badge variant="warning" className="text-[11px] font-semibold animate-pulse">
             En Quirófano
           </Badge>
         )
       case 'FINALIZADA':
         return (
-          <Badge className="bg-[#4CAF50] hover:bg-[#43A047] text-white text-[11px]">
+          <Badge variant="success" className="text-[11px] font-semibold">
             Finalizada
           </Badge>
         )
       case 'CANCELADA':
         return (
-          <Badge className="bg-[#F44336] hover:bg-[#E53935] text-white text-[11px]">
+          <Badge variant="destructive" className="text-[11px] font-semibold">
             Cancelada
           </Badge>
         )
@@ -151,10 +151,11 @@ export function SurgeriesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
+            <Scissors className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
             Agenda de Quirófano y Procedimientos Quirúrgicos
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
             Programación de intervenciones, seguimiento anestésico y protocolos operatorios
           </p>
         </div>
@@ -163,7 +164,7 @@ export function SurgeriesPage() {
           <Button
             onClick={() => setIsNewModalOpen(true)}
             size="sm"
-            className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs gap-2 shadow-xs"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs gap-2 shadow-xs"
           >
             <Plus className="w-4 h-4" />
             Programar Cirugía
@@ -176,14 +177,14 @@ export function SurgeriesPage() {
         <Card className="p-4 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 Cirugías Programadas
               </p>
-              <h3 className="text-2xl font-bold text-[#3F51B5] mt-1">
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">
                 {programadasCount}
               </h3>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-950/80 text-[#3F51B5] flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 flex items-center justify-center font-bold">
               <Calendar className="w-5 h-5" />
             </div>
           </div>
@@ -192,14 +193,14 @@ export function SurgeriesPage() {
         <Card className="p-4 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 En Quirófano / En Curso
               </p>
-              <h3 className="text-2xl font-bold text-[#FF9800] mt-1">
+              <h3 className="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1">
                 {enProcesoCount}
               </h3>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950/80 text-[#FF9800] flex items-center justify-center font-bold animate-pulse">
+            <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 flex items-center justify-center font-bold animate-pulse">
               <Activity className="w-5 h-5" />
             </div>
           </div>
@@ -208,14 +209,14 @@ export function SurgeriesPage() {
         <Card className="p-4 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                 Cirugías Concluidas
               </p>
-              <h3 className="text-2xl font-bold text-[#4CAF50] mt-1">
+              <h3 className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
                 {finalizadasCount}
               </h3>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-[#4CAF50] flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 flex items-center justify-center font-bold">
               <CheckCircle2 className="w-5 h-5" />
             </div>
           </div>
@@ -238,10 +239,10 @@ export function SurgeriesPage() {
               key={tab.key}
               type="button"
               onClick={() => setActiveFilter(tab.key)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
                 activeFilter === tab.key
-                  ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                  ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
               }`}
             >
               {tab.label}

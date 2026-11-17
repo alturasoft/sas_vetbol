@@ -154,7 +154,7 @@ export function RolesManagementPage() {
       {/* 1. Header de Página */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2.5">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
             <ShieldCheck className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
             Roles y Control de Accesos (RBAC)
           </h1>
@@ -221,7 +221,7 @@ export function RolesManagementPage() {
               <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
                 Roles de Sistema
               </span>
-              <div className="text-2xl font-black text-emerald-700 dark:text-emerald-300 mt-1">
+              <div className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1">
                 {stats.system}
               </div>
             </div>
@@ -237,7 +237,7 @@ export function RolesManagementPage() {
               <span className="text-xs font-semibold text-indigo-700 dark:text-indigo-400 uppercase tracking-wider">
                 Roles Personalizados
               </span>
-              <div className="text-2xl font-black text-indigo-700 dark:text-indigo-300 mt-1">
+              <div className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1">
                 {stats.custom}
               </div>
             </div>
@@ -253,7 +253,7 @@ export function RolesManagementPage() {
               <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
                 Personal con Rol
               </span>
-              <div className="text-2xl font-black text-amber-700 dark:text-amber-300 mt-1">
+              <div className="text-2xl font-black text-slate-900 dark:text-slate-100 mt-1">
                 {stats.totalAssignedUsers}
               </div>
             </div>

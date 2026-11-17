@@ -315,8 +315,9 @@ export function ClientsListPage() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-slate-100">
-            Directorio de Clientes
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
+            <Users className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
+            Directorio de Clientes y Propietarios
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             Gestión de propietarios de mascotas registrados en la clínica (Total: {clients.length})

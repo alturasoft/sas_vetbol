@@ -234,22 +234,22 @@ export function DoctorScheduleModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
       <div
-        className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]"
+        className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100">
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/60">
               <CalendarClock className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900">
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
                 Disponibilidad y Horarios de Atención
               </h2>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Dr(a). {doctor.nombres} {doctor.apellidos} &bull; Definición de turnos para agendamiento
               </p>
             </div>
@@ -257,21 +257,21 @@ export function DoctorScheduleModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+            className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Tab Selector */}
-        <div className="flex border-b border-slate-100 px-6 bg-white">
+        <div className="flex border-b border-slate-100 dark:border-slate-800 px-6 bg-white dark:bg-slate-900">
           <button
             type="button"
             onClick={() => setActiveTab('turnos')}
             className={`py-3 px-4 text-xs font-bold border-b-2 flex items-center gap-2 cursor-pointer transition-colors ${
               activeTab === 'turnos'
-                ? 'border-emerald-600 text-emerald-700'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
+                ? 'border-emerald-600 text-emerald-700 dark:text-emerald-400'
+                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
             <Clock className="w-4 h-4" />
@@ -282,8 +282,8 @@ export function DoctorScheduleModal({
             onClick={() => setActiveTab('bloqueos')}
             className={`py-3 px-4 text-xs font-bold border-b-2 flex items-center gap-2 cursor-pointer transition-colors ${
               activeTab === 'bloqueos'
-                ? 'border-emerald-600 text-emerald-700'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
+                ? 'border-emerald-600 text-emerald-700 dark:text-emerald-400'
+                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
             <CalendarX2 className="w-4 h-4" />
@@ -295,30 +295,30 @@ export function DoctorScheduleModal({
         {activeTab === 'turnos' && (
           <div className="flex-1 overflow-y-auto p-6 space-y-5">
             {/* Quick preset banner */}
-            <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 border border-slate-200/80">
-              <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4 text-emerald-600" />
+            <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800">
+              <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 Preajustes Rápidos:
               </span>
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={applyPresetStandard}
-                  className="px-2.5 py-1 text-[11px] font-medium bg-white hover:bg-slate-100 text-slate-700 rounded-lg border border-slate-200 cursor-pointer shadow-2xs"
+                  className="px-2.5 py-1 text-[11px] font-medium bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer shadow-2xs"
                 >
                   Estándar (Lun-Vie 9-18, Sáb 9-13)
                 </button>
                 <button
                   type="button"
                   onClick={applyPresetContinuous}
-                  className="px-2.5 py-1 text-[11px] font-medium bg-white hover:bg-slate-100 text-slate-700 rounded-lg border border-slate-200 cursor-pointer shadow-2xs"
+                  className="px-2.5 py-1 text-[11px] font-medium bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer shadow-2xs"
                 >
                   Continuo (8:00 - 16:00)
                 </button>
                 <button
                   type="button"
                   onClick={copyMondayToActive}
-                  className="px-2.5 py-1 text-[11px] font-medium bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg border border-emerald-200 cursor-pointer"
+                  className="px-2.5 py-1 text-[11px] font-medium bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 rounded-lg border border-emerald-200 dark:border-emerald-800 cursor-pointer"
                 >
                   Copiar Lunes a Activos
                 </button>
@@ -340,8 +340,8 @@ export function DoctorScheduleModal({
                       key={h.dia_semana}
                       className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
                         h.activo
-                          ? 'border-emerald-200 bg-emerald-50/20'
-                          : 'border-slate-200 bg-slate-50/50 opacity-60'
+                          ? 'border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/20 dark:bg-emerald-950/20'
+                          : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 opacity-60'
                       }`}
                     >
                       <div className="flex items-center gap-3 min-w-[120px]">
@@ -354,7 +354,7 @@ export function DoctorScheduleModal({
                         />
                         <label
                           htmlFor={`dia-${h.dia_semana}`}
-                          className="text-xs font-bold text-slate-800 cursor-pointer select-none"
+                          className="text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer select-none"
                         >
                           {diaInfo?.nombre}
                         </label>
@@ -393,7 +393,7 @@ export function DoctorScheduleModal({
             )}
 
             {/* Footer de Acciones */}
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
               <Button
                 type="button"
                 variant="outline"
@@ -430,10 +430,10 @@ export function DoctorScheduleModal({
           <div className="flex-1 overflow-y-auto p-6 space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
                   Excepciones y Ausencias Programadas
                 </h3>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
                   Bloquea citas por vacaciones, descansos, cirugías o feriados
                 </p>
               </div>
@@ -441,7 +441,7 @@ export function DoctorScheduleModal({
                 type="button"
                 onClick={() => setShowAddBloqueo(!showAddBloqueo)}
                 size="sm"
-                className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs"
+                className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs shadow-xs"
               >
                 <Plus className="w-3.5 h-3.5" />
                 {showAddBloqueo ? 'Cancelar' : 'Nuevo Bloqueo'}
@@ -452,11 +452,11 @@ export function DoctorScheduleModal({
             {showAddBloqueo && (
               <form
                 onSubmit={handleCreateBloqueo}
-                className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3"
+                className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-3"
               >
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-[11px] font-semibold text-slate-700">Fecha y Hora Inicio</label>
+                    <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">Fecha y Hora Inicio</label>
                     <Input
                       type="datetime-local"
                       value={bloqueoFechaInicio}
@@ -466,7 +466,7 @@ export function DoctorScheduleModal({
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[11px] font-semibold text-slate-700">Fecha y Hora Fin</label>
+                    <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">Fecha y Hora Fin</label>
                     <Input
                       type="datetime-local"
                       value={bloqueoFechaFin}
@@ -479,11 +479,11 @@ export function DoctorScheduleModal({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-[11px] font-semibold text-slate-700">Tipo de Bloqueo</label>
+                    <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">Tipo de Bloqueo</label>
                     <select
                       value={bloqueoTipo}
                       onChange={(e) => setBloqueoTipo(e.target.value as TipoBloqueoAgenda)}
-                      className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white"
+                      className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     >
                       <option value="DESCANSO">Descanso Programado</option>
                       <option value="VACACION">Vacaciones</option>
@@ -493,7 +493,7 @@ export function DoctorScheduleModal({
                     </select>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[11px] font-semibold text-slate-700">Motivo / Descripción</label>
+                    <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">Motivo / Descripción</label>
                     <Input
                       value={bloqueoMotivo}
                       onChange={(e) => setBloqueoMotivo(e.target.value)}
@@ -508,7 +508,7 @@ export function DoctorScheduleModal({
                     type="submit"
                     disabled={isSavingBloqueo}
                     size="sm"
-                    className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs"
+                    className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs shadow-xs"
                   >
                     {isSavingBloqueo ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                     Guardar Bloqueo
@@ -523,28 +523,28 @@ export function DoctorScheduleModal({
                 <Loader2 className="w-5 h-5 animate-spin text-emerald-600" />
               </div>
             ) : bloqueos.length === 0 ? (
-              <div className="p-8 text-center rounded-xl border border-dashed border-slate-200 text-slate-400">
-                <CalendarClock className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-                <p className="text-xs font-semibold text-slate-600">No hay ausencias ni bloqueos registrados</p>
-                <p className="text-[11px] text-slate-400 mt-0.5">El médico cuenta con disponibilidad regular.</p>
+              <div className="p-8 text-center rounded-xl border border-dashed border-slate-200 dark:border-slate-800 text-slate-400">
+                <CalendarClock className="w-8 h-8 mx-auto mb-2 text-slate-300 dark:text-slate-600" />
+                <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">No hay ausencias ni bloqueos registrados</p>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">El médico cuenta con disponibilidad regular.</p>
               </div>
             ) : (
               <div className="space-y-2">
                 {bloqueos.map((b) => (
                   <div
                     key={b.id_bloqueo}
-                    className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-white hover:border-slate-300 transition-colors"
+                    className="flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 transition-colors"
                   >
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-700 border border-amber-200">
+                        <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60">
                           {b.tipo_bloqueo}
                         </span>
-                        <span className="text-xs font-bold text-slate-800">
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
                           {b.motivo || 'Sin motivo especificado'}
                         </span>
                       </div>
-                      <div className="text-[11px] text-slate-500 mt-1">
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
                         Desde: {new Date(b.fecha_inicio).toLocaleString()} &bull; Hasta:{' '}
                         {new Date(b.fecha_fin).toLocaleString()}
                       </div>
@@ -553,7 +553,7 @@ export function DoctorScheduleModal({
                       <button
                         type="button"
                         onClick={() => handleDeleteBloqueo(b.id_bloqueo!)}
-                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                        className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer"
                         title="Eliminar bloqueo"
                       >
                         <Trash2 className="w-4 h-4" />
